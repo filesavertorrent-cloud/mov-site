@@ -628,7 +628,7 @@
         /* ===========================
            Save & Push to GitHub
         =========================== */
-        async function saveAndPush() {
+        async function saveAndPush(retry = true) {
             const pat = getPat();
             if (!pat) {
                 showStatus("error", "Please enter your GitHub Personal Access Token first.");
@@ -643,10 +643,26 @@
 
             const saveBtn = document.getElementById("save-btn");
             saveBtn.disabled = true;
-            saveBtn.textContent = "⏳ Pushing to GitHub...";
-            showStatus("loading", "Committing config.json to GitHub...");
+            saveBtn.textContent = retry ? "⏳ Pushing to GitHub..." : "⏳ Retying push...";
+            showStatus("loading", retry ? "Committing config.json to GitHub..." : "Conflict detected! Fetching latest version and retrying...");
 
             try {
+                // Fetch latest SHA first to minimize conflict window
+                if (retry) {
+                    try {
+                        const shaRes = await fetch(API_BASE, {
+                            headers: {
+                                "Authorization": `token ${pat}`,
+                                "Accept": "application/vnd.github.v3+json"
+                            }
+                        });
+                        if (shaRes.ok) {
+                            const shaData = await shaRes.json();
+                            currentSha = shaData.sha;
+                        }
+                    } catch (e) { console.warn("Could not pre-fetch SHA, proceeding with cached SHA"); }
+                }
+
                 const content = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2) + "\n")));
 
                 const body = {
@@ -677,6 +693,24 @@
                     renderStatus(config);
                     showStatus("success", "✅ Config pushed to GitHub successfully! Your site will update shortly.");
                 } else {
+                    if (res.status === 409 && retry) {
+                        // Conflict! Fetch latest SHA and retry ONCE
+                        showStatus("loading", "⚠️ Conflict detected. Fetching latest version and retrying...");
+                        const shaRes = await fetch(API_BASE, {
+                            headers: {
+                                "Authorization": `token ${pat}`,
+                                "Accept": "application/vnd.github.v3+json"
+                            }
+                        });
+                        if (shaRes.ok) {
+                            const shaData = await shaRes.json();
+                            currentSha = shaData.sha;
+                            // Retry recursively with retry=false
+                            await saveAndPush(false);
+                            return;
+                        }
+                    }
+
                     const err = await res.json();
                     if (res.status === 401) {
                         showStatus("error", "❌ Invalid token. Make sure your PAT has 'repo' scope.");
@@ -691,8 +725,11 @@
             } catch (e) {
                 showStatus("error", `❌ Network error: ${e.message}`);
             } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = "💾 Save & Push to GitHub";
+                // Only re-enable if we are NOT retrying
+                if (retry) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = "💾 Save & Push to GitHub";
+                }
             }
         }
 
