@@ -1,130 +1,130 @@
 {
-    "expiryTime": "2026-02-13T12:30:00+05:30",
-    "movies": [
+  "expiryTime": "2026-02-13T13:22:37.441Z",
+  "movies": [
+    {
+      "title": "Epic Adventure",
+      "poster": "https://picsum.photos/seed/movie1/800/540.jpg",
+      "rating": "8.5",
+      "year": "2023",
+      "duration": "2h 28min",
+      "genre": "Action / Adventure",
+      "qualities": [
         {
-            "title": "Epic Adventure",
-            "poster": "https://picsum.photos/seed/movie1/800/540.jpg",
-            "rating": "8.5",
-            "year": "2023",
-            "duration": "2h 28min",
-            "genre": "Action / Adventure",
-            "qualities": [
-                {
-                    "label": "480p",
-                    "size": "1 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "720p",
-                    "size": "2 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "1080p",
-                    "size": "4 GB",
-                    "url": "#"
-                }
-            ]
+          "label": "480p",
+          "size": "1 GB",
+          "url": "https://www.youtube.com/"
         },
         {
-            "title": "Midnight Shadows",
-            "poster": "https://picsum.photos/seed/movie2/800/540.jpg",
-            "rating": "7.9",
-            "year": "2024",
-            "duration": "1h 52min",
-            "genre": "Thriller / Mystery",
-            "qualities": [
-                {
-                    "label": "480p",
-                    "size": "1 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "720p",
-                    "size": "2 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "1080p",
-                    "size": "4 GB",
-                    "url": "#"
-                }
-            ]
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
         },
         {
-            "title": "Crimson Horizon",
-            "poster": "https://picsum.photos/seed/movie3/800/540.jpg",
-            "rating": "8.2",
-            "year": "2025",
-            "duration": "2h 15min",
-            "genre": "Sci-Fi / Drama",
-            "qualities": [
-                {
-                    "label": "480p",
-                    "size": "1 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "720p",
-                    "size": "2 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "1080p",
-                    "size": "4 GB",
-                    "url": "#"
-                }
-            ]
-        },
-        {
-            "title": "Ocean's Echo",
-            "poster": "https://picsum.photos/seed/movie4/800/540.jpg",
-            "rating": "7.5",
-            "year": "2024",
-            "duration": "1h 48min",
-            "genre": "Romance / Drama",
-            "qualities": [
-                {
-                    "label": "480p",
-                    "size": "1 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "720p",
-                    "size": "2 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "1080p",
-                    "size": "4 GB",
-                    "url": "#"
-                }
-            ]
-        },
-        {
-            "title": "Steel Fury",
-            "poster": "https://picsum.photos/seed/movie5/800/540.jpg",
-            "rating": "8.8",
-            "year": "2025",
-            "duration": "2h 35min",
-            "genre": "Action / War",
-            "qualities": [
-                {
-                    "label": "480p",
-                    "size": "1 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "720p",
-                    "size": "2 GB",
-                    "url": "#"
-                },
-                {
-                    "label": "1080p",
-                    "size": "4 GB",
-                    "url": "#"
-                }
-            ]
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
         }
-    ]
+      ]
+    },
+    {
+      "title": "Midnight Shadows",
+      "poster": "https://picsum.photos/seed/movie2/800/540.jpg",
+      "rating": "7.9",
+      "year": "2024",
+      "duration": "1h 52min",
+      "genre": "Thriller / Mystery",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "https://www.youtube.com/"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
+      ]
+    },
+    {
+      "title": "Crimson Horizon",
+      "poster": "https://picsum.photos/seed/movie3/800/540.jpg",
+      "rating": "8.2",
+      "year": "2025",
+      "duration": "2h 15min",
+      "genre": "Sci-Fi / Drama",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
+      ]
+    },
+    {
+      "title": "Ocean's Echo",
+      "poster": "https://picsum.photos/seed/movie4/800/540.jpg",
+      "rating": "7.5",
+      "year": "2024",
+      "duration": "1h 48min",
+      "genre": "Romance / Drama",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
+      ]
+    },
+    {
+      "title": "Steel Fury",
+      "poster": "https://picsum.photos/seed/movie5/800/540.jpg",
+      "rating": "8.8",
+      "year": "2025",
+      "duration": "2h 35min",
+      "genre": "Action / War",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
+      ]
+    }
+  ]
 }
