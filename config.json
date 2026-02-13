@@ -1,5 +1,5 @@
 {
-  "expiryTime": "2026-02-13T12:30:00+05:30",
+  "expiryTime": "2026-02-13T07:06:30.459Z",
   "movies": [
     {
       "title": "Epic Adventure",
@@ -9,9 +9,21 @@
       "duration": "2h 28min",
       "genre": "Action / Adventure",
       "qualities": [
-        { "label": "480p", "size": "1 GB", "url": "https://drive.google.com/uc?export=download&id=1IyCojQiWtkeswARvjdxx7s_Je2XBOlkc" },
-        { "label": "720p", "size": "2 GB", "url": "#" },
-        { "label": "1080p", "size": "4 GB", "url": "#" }
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "https://drive.google.com/uc?export=download&id=1IyCojQiWtkeswARvjdxx7s_Je2XBOlkc"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
       ]
     },
     {
@@ -22,9 +34,21 @@
       "duration": "1h 52min",
       "genre": "Thriller / Mystery",
       "qualities": [
-        { "label": "480p", "size": "1 GB", "url": "#" },
-        { "label": "720p", "size": "2 GB", "url": "#" },
-        { "label": "1080p", "size": "4 GB", "url": "#" }
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
       ]
     },
     {
@@ -35,9 +59,21 @@
       "duration": "2h 15min",
       "genre": "Sci-Fi / Drama",
       "qualities": [
-        { "label": "480p", "size": "1 GB", "url": "#" },
-        { "label": "720p", "size": "2 GB", "url": "#" },
-        { "label": "1080p", "size": "4 GB", "url": "#" }
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
       ]
     },
     {
@@ -48,9 +84,21 @@
       "duration": "1h 48min",
       "genre": "Romance / Drama",
       "qualities": [
-        { "label": "480p", "size": "1 GB", "url": "#" },
-        { "label": "720p", "size": "2 GB", "url": "#" },
-        { "label": "1080p", "size": "4 GB", "url": "#" }
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
       ]
     },
     {
@@ -61,9 +109,21 @@
       "duration": "2h 35min",
       "genre": "Action / War",
       "qualities": [
-        { "label": "480p", "size": "1 GB", "url": "#" },
-        { "label": "720p", "size": "2 GB", "url": "#" },
-        { "label": "1080p", "size": "4 GB", "url": "#" }
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "#"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "#"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "#"
+        }
       ]
     }
   ]
