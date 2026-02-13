@@ -736,7 +736,7 @@
                 // Fetch latest SHA first to minimize conflict window
                 if (retry) {
                     try {
-                        const shaRes = await fetch(API_BASE, {
+                        const shaRes = await fetch(API_BASE + "?t=" + Date.now(), {
                             headers: {
                                 "Authorization": `Bearer ${pat}`,
                                 "Accept": "application/vnd.github.v3+json"
@@ -787,7 +787,7 @@
                     if (res.status === 409 && retry) {
                         // Conflict! Fetch latest SHA and retry ONCE
                         showStatus("loading", "⚠️ Conflict detected. Fetching latest version and retrying...");
-                        const shaRes = await fetch(API_BASE, {
+                        const shaRes = await fetch(API_BASE + "?t=" + Date.now(), {
                             headers: {
                                 "Authorization": `Bearer ${pat}`,
                                 "Accept": "application/vnd.github.v3+json"
