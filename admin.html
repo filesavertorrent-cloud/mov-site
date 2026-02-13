@@ -574,7 +574,7 @@
                 {
                     title: "Epic Adventure",
                     poster: "https://picsum.photos/seed/movie1/800/540.jpg",
-                    rating: "8.5", year: "2023", duration: "2h 28min", genre: "Action / Adventure",
+                    rating: "8.5", year: "2023", duration: "2h 28min", "genre": "Action / Adventure",
                     qualities: [
                         { label: "480p", size: "1 GB", url: "" },
                         { label: "720p", size: "2 GB", url: "" },
@@ -628,11 +628,22 @@
            Load Config
         =========================== */
         async function loadConfig() {
-            showStatus("loading", "Loading config...");
+            showStatus("loading", "🚀 Step 1: Starting config load...");
+
+            // TIMEOUT FAILSAFE: Force template if load takes too long (5s)
+            const timeout = setTimeout(() => {
+                if (!currentConfig) {
+                    showStatus("error", "⚠️ Load timed out (5s). Using default template to allow editing.");
+                    currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE));
+                    renderMovies(currentConfig);
+                }
+            }, 5000);
+
             try {
                 // 1. Try fetching from GitHub API (most up-to-date, requires token if private, but helps avoid cache)
                 const pat = getPat();
                 if (pat) {
+                    showStatus("loading", "Step 2: Checking GitHub API (using PAT)...");
                     const res = await fetch(API_BASE + "?ref=" + GITHUB_BRANCH + "&t=" + Date.now(), {
                         headers: {
                             "Authorization": `Bearer ${pat}`,
@@ -640,32 +651,41 @@
                         }
                     });
                     if (res.ok) {
+                        clearTimeout(timeout);
                         const data = await res.json();
                         currentSha = data.sha;
                         const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ""))));
                         currentConfig = JSON.parse(content);
                         renderMovies(currentConfig);
                         renderStatus(currentConfig);
-                        showStatus("success", "✅ Config loaded from GitHub!");
+                        showStatus("success", "✅ Config loaded from GitHub API!");
                         return;
+                    } else {
+                        showStatus("loading", `API check failed (${res.status}). Trying fallback...`);
                     }
+                } else {
+                    showStatus("loading", "Step 2: No PAT found. Skipping API check...");
                 }
 
                 // 2. Fallback: Try fetching directly (public cache)
+                showStatus("loading", "Step 3: Fetching config.json directly...");
                 const res = await fetch(CONFIG_PATH + "?t=" + Date.now());
                 if (res.ok) {
+                    clearTimeout(timeout);
                     currentConfig = await res.json();
                     renderMovies(currentConfig);
                     renderStatus(currentConfig);
-                    showStatus("success", "✅ Loaded successfully (Public)");
+                    showStatus("success", "✅ Loaded successfully (Direct Link)");
                 } else {
-                    throw new Error("Config not found");
+                    throw new Error(`Direct fetch failed: ${res.status}`);
                 }
             } catch (e) {
                 console.error(e);
+                clearTimeout(timeout);
+                // Fallback to template if everything fails
                 currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE));
                 renderMovies(currentConfig);
-                showStatus("error", "⚠️ Could not load config. Using default template.");
+                showStatus("error", `⚠️ Error: ${e.message}. Using default template.`);
             }
         }
 
@@ -848,8 +868,6 @@
                     renderStatus(config);
                     showStatus("success", "✅ Config updated! Refresh your website.");
 
-                    // No redirect needed really if we are just updating config
-                    // But we can reload to show fresh state
                     setTimeout(() => {
                         showStatus("success", "✅ Config updated! You can close this or edit again.");
                         saveBtn.disabled = false;
@@ -883,7 +901,8 @@
         function showStatus(type, message) {
             const el = document.getElementById("status-msg");
             el.className = `status status--${type}`;
-            el.textContent = message;
+            el.innerHTML = message;
+            el.style.display = "block";
         }
 
         /* ===========================
