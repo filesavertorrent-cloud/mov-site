@@ -570,7 +570,7 @@
                 // Try GitHub API first (to get SHA for updates)
                 const pat = getPat();
                 const headers = { "Accept": "application/vnd.github.v3+json" };
-                if (pat) headers["Authorization"] = `token ${pat}`;
+                if (pat) headers["Authorization"] = `Bearer ${pat}`;
 
                 const res = await fetch(API_BASE + "?t=" + Date.now(), { headers });
                 if (res.ok) {
@@ -738,7 +738,7 @@
                     try {
                         const shaRes = await fetch(API_BASE, {
                             headers: {
-                                "Authorization": `token ${pat}`,
+                                "Authorization": `Bearer ${pat}`,
                                 "Accept": "application/vnd.github.v3+json"
                             }
                         });
@@ -765,7 +765,7 @@
                 const res = await fetch(API_BASE, {
                     method: "PUT",
                     headers: {
-                        "Authorization": `token ${pat}`,
+                        "Authorization": `Bearer ${pat}`,
                         "Accept": "application/vnd.github.v3+json",
                         "Content-Type": "application/json"
                     },
@@ -789,7 +789,7 @@
                         showStatus("loading", "⚠️ Conflict detected. Fetching latest version and retrying...");
                         const shaRes = await fetch(API_BASE, {
                             headers: {
-                                "Authorization": `token ${pat}`,
+                                "Authorization": `Bearer ${pat}`,
                                 "Accept": "application/vnd.github.v3+json"
                             }
                         });
