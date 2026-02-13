@@ -668,23 +668,31 @@
                 return `${s}s`;
             }
 
+            const hasLink = quality.url && quality.url !== "#" && quality.url.trim() !== "";
+
             return (
                 <button
-                    className={`dl-btn ${quality.className}${expired ? " dl-btn--disabled" : ""}`}
-                    onClick={() => !expired && onDownload(quality)}
-                    disabled={expired}
+                    className={`dl-btn ${quality.className}${expired && hasLink ? " dl-btn--disabled" : ""}`}
+                    onClick={() => hasLink && !expired && onDownload(quality)}
+                    disabled={expired && hasLink}
                     aria-label={
-                        expired
-                            ? `${quality.label} download link expired`
-                            : `Download in ${quality.label} quality — ${quality.size}`
+                        hasLink
+                            ? (expired
+                                ? `${quality.label} download link expired`
+                                : `Download in ${quality.label} quality — ${quality.size}`)
+                            : `${quality.label} quality`
                     }
+                    style={{ cursor: hasLink ? 'pointer' : 'default', opacity: hasLink ? 1 : 0.7 }}
                 >
                     <DownloadIcon />
                     <span className="dl-btn__quality">{quality.label}</span>
-                    {expired
-                        ? <span className="dl-btn__expired">Link Expired</span>
-                        : <span className="dl-btn__size">{quality.size} • {formatTime(timeLeft)}</span>
-                    }
+                    {hasLink ? (
+                        expired
+                            ? <span className="dl-btn__expired">Link Expired</span>
+                            : <span className="dl-btn__size">{quality.size} • {formatTime(timeLeft)}</span>
+                    ) : (
+                        <span className="dl-btn__size">{quality.size}</span>
+                    )}
                 </button>
             );
         }
