@@ -629,38 +629,51 @@
         =========================== */
         async function loadConfig() {
             showStatus("loading", "🚀 Step 1: Starting config load...");
+            console.log("Starting loadConfig...");
 
-            // TIMEOUT FAILSAFE: Force template if load takes too long (5s)
+            // TIMEOUT FAILSAFE: Force template if load takes too long (8s)
             const timeout = setTimeout(() => {
                 if (!currentConfig) {
-                    showStatus("error", "⚠️ Load timed out (5s). Using default template to allow editing.");
+                    console.warn("Load timed out.");
+                    showStatus("error", "⚠️ Load timed out (8s). Using default template.");
                     currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE));
                     renderMovies(currentConfig);
                 }
-            }, 5000);
+            }, 8000);
 
             try {
-                // 1. Try fetching from GitHub API (most up-to-date, requires token if private, but helps avoid cache)
-                const pat = getPat();
+                // Ensure PAT is loaded from storage if input is empty
+                let pat = getPat();
+                if (!pat) {
+                    pat = localStorage.getItem("mv_admin_pat");
+                    if (pat && document.getElementById("pat-input")) {
+                        document.getElementById("pat-input").value = pat;
+                    }
+                }
+
                 if (pat) {
                     showStatus("loading", "Step 2: Checking GitHub API (using PAT)...");
+                    console.log("Fetching from GitHub API...");
                     const res = await fetch(API_BASE + "?ref=" + GITHUB_BRANCH + "&t=" + Date.now(), {
                         headers: {
                             "Authorization": `Bearer ${pat}`,
                             "Accept": "application/vnd.github.v3+json"
                         }
                     });
+
                     if (res.ok) {
                         clearTimeout(timeout);
                         const data = await res.json();
                         currentSha = data.sha;
                         const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ""))));
                         currentConfig = JSON.parse(content);
+                        console.log("Loaded from API");
                         renderMovies(currentConfig);
                         renderStatus(currentConfig);
                         showStatus("success", "✅ Config loaded from GitHub API!");
                         return;
                     } else {
+                        console.warn(`API check failed: ${res.status}`);
                         showStatus("loading", `API check failed (${res.status}). Trying fallback...`);
                     }
                 } else {
@@ -673,6 +686,7 @@
                 if (res.ok) {
                     clearTimeout(timeout);
                     currentConfig = await res.json();
+                    console.log("Loaded from Direct Link");
                     renderMovies(currentConfig);
                     renderStatus(currentConfig);
                     showStatus("success", "✅ Loaded successfully (Direct Link)");
@@ -744,18 +758,125 @@
                 });
 
                 card.innerHTML = `
-                    <div class="movie-admin__header">
-                        <img class="movie-admin__poster" src="${movie.poster}" alt="${movie.title}" />
-                        <div>
-                            <div class="movie-admin__title">${movie.title}</div>
-                            <div class="movie-admin__meta">${movie.year} • ${movie.genre}</div>
+                    <div class="movie-admin__header" style="align-items: flex-start;">
+                        <div style="flex-shrink:0; width: 80px;">
+                             <img class="movie-admin__poster" src="${movie.poster}" alt="${movie.title}" style="width:100%; height:auto; margin-bottom:5px;" />
+                             <div style="font-size:0.7rem; text-align:center; opacity:0.6;">Poster Preview</div>
+                        </div>
+                        <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px;">
+                            <div>
+                                <label style="margin:0 0 4px 0; font-size:0.7rem;">Title</label>
+                                <input type="text" id="title-${i}" value="${movie.title}" placeholder="Movie Title" />
+                            </div>
+                            <div>
+                                <label style="margin:0 0 4px 0; font-size:0.7rem;">Poster URL</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input type="url" id="poster-${i}" value="${movie.poster}" placeholder="https://..." style="flex-grow:1;" />
+                                    <input type="file" id="file-${i}" accept="image/*" style="display:none;" onchange="uploadImage(this, ${i})" />
+                                    <button onclick="document.getElementById('file-${i}').click()" style="padding: 10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:10px; cursor:pointer;" title="Upload from Device">
+                                        📂
+                                    </button>
+                                </div>
+                                <div id="upload-status-${i}" style="font-size:0.7rem; color:rgba(255,255,255,0.5); text-align:right; padding-top:2px;"></div>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                                <div>
+                                    <label style="margin:0 0 4px 0; font-size:0.7rem;">Rating</label>
+                                    <input type="text" id="rating-${i}" value="${movie.rating}" placeholder="e.g. 8.5" />
+                                </div>
+                                <div>
+                                    <label style="margin:0 0 4px 0; font-size:0.7rem;">Year</label>
+                                    <input type="text" id="year-${i}" value="${movie.year}" placeholder="e.g. 2023" />
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                                <div>
+                                    <label style="margin:0 0 4px 0; font-size:0.7rem;">Duration</label>
+                                    <input type="text" id="duration-${i}" value="${movie.duration}" placeholder="e.g. 2h 30min" />
+                                </div>
+                                <div>
+                                    <label style="margin:0 0 4px 0; font-size:0.7rem;">Genre</label>
+                                    <input type="text" id="genre-${i}" value="${movie.genre}" placeholder="e.g. Action" />
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <label style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Download Links</label>
                     ${qualitiesHTML}
                 `;
 
                 container.appendChild(card);
             });
+        }
+
+        /* ===========================
+           Image Upload Logic
+        =========================== */
+        async function uploadImage(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const pat = getPat();
+            if (!pat) {
+                alert("Please enter a GitHub Token first to upload images.");
+                input.value = ""; // Clear selection
+                return;
+            }
+
+            const statusLabel = document.getElementById(`upload-status-${index}`);
+            statusLabel.textContent = "⏳ Uploading...";
+
+            // Limit file size (e.g., 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert("File too large (Max 2MB).");
+                statusLabel.textContent = "❌ Too large";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function () {
+                const base64Content = reader.result.split(",")[1];
+                const filename = `poster_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+                const path = `images/${filename}`;
+
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+                        method: "PUT",
+                        headers: {
+                            "Authorization": `Bearer ${pat}`,
+                            "Content-Type": "application/json",
+                            "Accept": "application/vnd.github.v3+json"
+                        },
+                        body: JSON.stringify({
+                            message: `Upload ${filename}`,
+                            content: base64Content,
+                            branch: GITHUB_BRANCH
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        const downloadUrl = data.content.download_url;
+
+                        document.getElementById(`poster-${index}`).value = downloadUrl;
+                        // Also update preview
+                        const imgPreview = input.closest('.movie-admin__header').querySelector('.movie-admin__poster');
+                        if (imgPreview) imgPreview.src = downloadUrl;
+
+                        statusLabel.textContent = "✅ Done";
+                        statusLabel.style.color = "#81c784";
+                    } else {
+                        const err = await res.json();
+                        console.error(err);
+                        statusLabel.textContent = "❌ Error";
+                        alert(`Upload failed: ${err.message}`);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    statusLabel.textContent = "❌ Network Error";
+                }
+            };
         }
 
         /* ===========================
@@ -778,23 +899,33 @@
                 expiryTime = currentConfig.expiryTime;
             }
 
-            const movies = currentConfig.movies.map((movie, i) => ({
-                title: movie.title,
-                poster: movie.poster,
-                rating: movie.rating,
-                year: movie.year,
-                duration: movie.duration,
-                genre: movie.genre,
-                qualities: movie.qualities.map((q, qi) => {
-                    const input = document.getElementById(`url-${i}-${qi}`);
-                    const url = input && input.value.trim() ? input.value.trim() : "#";
-                    return {
-                        label: q.label,
-                        size: q.size,
-                        url: url
-                    };
-                })
-            }));
+            const movies = currentConfig.movies.map((movie, i) => {
+                // Get values from inputs, fallback to existing if empty/error (though inputs should be populated)
+                const titleInput = document.getElementById(`title-${i}`);
+                const posterInput = document.getElementById(`poster-${i}`);
+                const ratingInput = document.getElementById(`rating-${i}`);
+                const yearInput = document.getElementById(`year-${i}`);
+                const durationInput = document.getElementById(`duration-${i}`);
+                const genreInput = document.getElementById(`genre-${i}`);
+
+                return {
+                    title: titleInput ? titleInput.value.trim() : movie.title,
+                    poster: posterInput ? posterInput.value.trim() : movie.poster,
+                    rating: ratingInput ? ratingInput.value.trim() : movie.rating,
+                    year: yearInput ? yearInput.value.trim() : movie.year,
+                    duration: durationInput ? durationInput.value.trim() : movie.duration,
+                    genre: genreInput ? genreInput.value.trim() : movie.genre,
+                    qualities: movie.qualities.map((q, qi) => {
+                        const input = document.getElementById(`url-${i}-${qi}`);
+                        const url = input && input.value.trim() ? input.value.trim() : "#";
+                        return {
+                            label: q.label,
+                            size: q.size,
+                            url: url
+                        };
+                    })
+                };
+            });
 
             return {
                 expiryTime: expiryTime,
@@ -866,13 +997,11 @@
                     currentSha = data.content.sha;
                     currentConfig = config;
                     renderStatus(config);
-                    showStatus("success", "✅ Config updated! Refresh your website.");
 
+                    showStatus("success", "✅ Config updated! Redirecting to homepage...");
                     setTimeout(() => {
-                        showStatus("success", "✅ Config updated! You can close this or edit again.");
-                        saveBtn.disabled = false;
-                        saveBtn.textContent = "💾 Save & Push to GitHub";
-                    }, 1000);
+                        window.location.href = "index.html";
+                    }, 1500);
 
                 } else {
                     if (res.status === 409 && retry) {
@@ -910,6 +1039,9 @@
         =========================== */
         // Called by showApp
     </script>
+    <div style="text-align:center; padding:20px; font-size:0.8rem; color:rgba(255,255,255,0.3);">
+        MovieVault Admin - v1.2.0 (Updated: ${new Date().toLocaleString()})
+    </div>
 </body>
 
 </html>
