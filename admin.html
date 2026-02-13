@@ -777,7 +777,12 @@
                     currentSha = data.content.sha;
                     currentConfig = config;
                     renderStatus(config);
-                    showStatus("success", "✅ Config pushed to GitHub successfully! Your site will update shortly.");
+                    showStatus("success", "✅ Config pushed! Redirecting to home page...");
+
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = "index.html";
+                    }, 2000);
                 } else {
                     if (res.status === 409 && retry) {
                         // Conflict! Fetch latest SHA and retry ONCE
