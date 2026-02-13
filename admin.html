@@ -566,50 +566,79 @@
            Fetch Current Config
         =========================== */
         /* ===========================
-           Fetch Current Config
+           Hardcoded Template
         =========================== */
-        async function loadConfig() {
-            const container = document.getElementById("movies-container");
-            container.innerHTML = '<div style="text-align:center; color: rgba(255,255,255,0.5); padding: 20px;">Fetching config from GitHub API...</div>';
-
-            try {
-                // Try GitHub API first (to get SHA for updates)
-                const pat = getPat();
-                const headers = { "Accept": "application/vnd.github.v3+json" };
-                // Use Bearer for both Classic and Fine-grained tokens
-                if (pat) headers["Authorization"] = `Bearer ${pat}`;
-
-                const res = await fetch(API_BASE + "?t=" + Date.now(), { headers });
-                if (res.ok) {
-                    const data = await res.json();
-                    currentSha = data.sha;
-                    const content = atob(data.content.replace(/\n/g, ""));
-                    currentConfig = JSON.parse(content);
-                } else {
-                    container.innerHTML = '<div style="text-align:center; color: rgba(255,255,255,0.5); padding: 20px;">API failed, trying raw...</div>';
-                    // Fallback to raw URL
-                    const rawRes = await fetch(RAW_URL + "?t=" + Date.now(), { cache: "no-store" });
-                    if (rawRes.ok) {
-                        currentConfig = await rawRes.json();
-                    } else {
-                        throw new Error(`Both API (${res.status}) and Raw (${rawRes.status}) failed.`);
-                    }
+        const MOVIES_TEMPLATE = {
+            expiryTime: new Date().toISOString(), // Default to now
+            movies: [
+                {
+                    title: "Epic Adventure",
+                    poster: "https://picsum.photos/seed/movie1/800/540.jpg",
+                    rating: "8.5", year: "2023", duration: "2h 28min", genre: "Action / Adventure",
+                    qualities: [
+                        { label: "480p", size: "1 GB", url: "" },
+                        { label: "720p", size: "2 GB", url: "" },
+                        { label: "1080p", size: "4 GB", url: "" }
+                    ]
+                },
+                {
+                    title: "Midnight Shadows",
+                    poster: "https://picsum.photos/seed/movie2/800/540.jpg",
+                    rating: "7.9", year: "2024", duration: "1h 52min", genre: "Thriller / Mystery",
+                    qualities: [
+                        { label: "480p", size: "1 GB", url: "" },
+                        { label: "720p", size: "2 GB", url: "" },
+                        { label: "1080p", size: "4 GB", url: "" }
+                    ]
+                },
+                {
+                    title: "Crimson Horizon",
+                    poster: "https://picsum.photos/seed/movie3/800/540.jpg",
+                    rating: "8.2", year: "2025", duration: "2h 15min", genre: "Sci-Fi / Drama",
+                    qualities: [
+                        { label: "480p", size: "1 GB", url: "" },
+                        { label: "720p", size: "2 GB", url: "" },
+                        { label: "1080p", size: "4 GB", url: "" }
+                    ]
+                },
+                {
+                    title: "Ocean's Echo",
+                    poster: "https://picsum.photos/seed/movie4/800/540.jpg",
+                    rating: "7.5", year: "2024", duration: "1h 48min", genre: "Romance / Drama",
+                    qualities: [
+                        { label: "480p", size: "1 GB", url: "" },
+                        { label: "720p", size: "2 GB", url: "" },
+                        { label: "1080p", size: "4 GB", url: "" }
+                    ]
+                },
+                {
+                    title: "Steel Fury",
+                    poster: "https://picsum.photos/seed/movie5/800/540.jpg",
+                    rating: "8.8", year: "2025", duration: "2h 35min", genre: "Action / War",
+                    qualities: [
+                        { label: "480p", size: "1 GB", url: "" },
+                        { label: "720p", size: "2 GB", url: "" },
+                        { label: "1080p", size: "4 GB", url: "" }
+                    ]
                 }
-            } catch (e) {
-                console.error("Failed to load config:", e);
-                container.innerHTML = `
-                    <div style="text-align:center; color:#ef9a9a; padding:20px;">
-                        <p>⚠️ Could not load config.</p>
-                        <p style="font-size:0.8rem; opacity:0.7;">${e.message}</p>
-                        <button class="btn-primary" style="margin-top:10px; padding: 8px 16px; font-size: 0.8rem;" onclick="loadConfig()">Retry</button>
-                    </div>`;
-                return;
-            }
+            ]
+        };
 
-            if (currentConfig) {
-                renderMovies(currentConfig);
-                renderStatus(currentConfig);
-            }
+        /* ===========================
+           Load Config (Template Only)
+        =========================== */
+        function loadConfig() {
+            // Use the template immediately. No fetching.
+            currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE)); // Deep copy
+
+            // Render
+            renderMovies(currentConfig);
+
+            // Just show basic status (no timer info since we don't know it yet)
+            document.getElementById("status-section").style.display = "none";
+
+            // Optional: Try to fetch ONLY to show current timer/status? 
+            // The user wants "no config", so let's stick to that.
         }
 
         /* ===========================
