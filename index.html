@@ -4,499 +4,368 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MovieVault - Download Movies in HD Quality</title>
-    <meta name="description"
-        content="MovieVault — your premium movie collection. Download movies in 480p, 720p, and 1080p HD quality." />
+    <title>MovieVault - Premium Collection</title>
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
-
-    <!-- React 18 via CDN -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for JSX -->
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        /* ===== CSS Reset & Base ===== */
-        *,
-        *::before,
-        *::after {
+        /* (Same CSS as before) */
+        :root {
+            --primary: #e94560;
+            --secondary: #16213e;
+            --dark: #0f0c29;
+            --light: #f0f0f0;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        html {
-            font-size: 16px;
-            scroll-behavior: smooth;
-        }
-
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #1a1a2e, #16213e);
-            color: #f0f0f0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
             min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        #root {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* ===== Animated Background Particles ===== */
-        .bg-glow {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .bg-glow--1 {
-            width: 500px;
-            height: 500px;
-            background: #e94560;
-            top: -10%;
-            left: -5%;
-            animation: float 20s ease-in-out infinite;
-        }
-
-        .bg-glow--2 {
-            width: 400px;
-            height: 400px;
-            background: #4361ee;
-            bottom: -10%;
-            right: -5%;
-            animation: float 25s ease-in-out infinite reverse;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translate(0, 0);
-            }
-
-            50% {
-                transform: translate(40px, 30px);
-            }
+            /* Deep Space Gradient */
+            background: radial-gradient(circle at top right, #1a1a2e, #0f0c29);
         }
 
         /* ===== Header ===== */
         .header {
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
             z-index: 100;
-            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(15, 12, 41, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .header__center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
+            padding: 0 5%;
+            background: rgba(15, 12, 41, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .header__logo {
-            font-size: 1.75rem;
+            font-size: 1.8rem;
             font-weight: 800;
             background: linear-gradient(135deg, #e94560, #ff6b81);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: 1.5px;
-        }
-
-        .header__tagline {
-            margin-top: 2px;
-            font-size: 0.8rem;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.45);
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             text-transform: uppercase;
         }
 
+        .header__tagline {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: none;
+        }
+
         .header__admin-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.6);
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            font-family: inherit;
-            font-size: 0.78rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: 500;
             transition: all 0.3s;
-            white-space: nowrap;
         }
 
         .header__admin-btn:hover {
-            background: rgba(233, 69, 96, 0.15);
-            border-color: rgba(233, 69, 96, 0.4);
-            color: #ff6b81;
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
         }
 
-        /* ===== Main Content ===== */
+        @media(min-width: 768px) {
+            .header__tagline {
+                display: block;
+                margin-left: 20px;
+            }
+
+            .header__center {
+                display: flex;
+                align-items: baseline;
+            }
+        }
+
+        /* ===== Main ===== */
         .main {
-            flex: 1;
+            margin-top: 100px;
+            padding: 0 5%;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 30px;
-            padding: 40px 20px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
             max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            position: relative;
-            z-index: 1;
+            margin-left: auto;
+            margin-right: auto;
+            padding-bottom: 80px;
         }
 
         /* ===== Movie Card ===== */
         .movie-card {
-            width: 100%;
-            border-radius: 20px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
         .movie-card:hover {
-            transform: translateY(-4px);
-            box-shadow:
-                0 30px 80px rgba(233, 69, 96, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+            transform: translateY(-10px) scale(1.02);
+            z-index: 2;
+            box-shadow: 0 30px 60px rgba(233, 69, 96, 0.2);
+            border-color: rgba(233, 69, 96, 0.5);
         }
 
-        /* ===== Movie Poster ===== */
+        /* Poster Area */
         .movie-poster {
             position: relative;
             width: 100%;
-            height: 480px;
+            padding-top: 60%;
+            /* Aspect Ratio */
             overflow: hidden;
         }
 
         .movie-poster__img {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: transform 0.8s;
         }
 
-        .movie-poster:hover .movie-poster__img {
-            transform: scale(1.06);
+        .movie-card:hover .movie-poster__img {
+            transform: scale(1.1);
         }
 
         .movie-poster__overlay {
             position: absolute;
-            inset: 0;
-            background: linear-gradient(to top,
-                    rgba(15, 12, 41, 0.95) 0%,
-                    rgba(15, 12, 41, 0.4) 40%,
-                    transparent 70%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, #0f0c29 10%, transparent 80%);
+            z-index: 1;
         }
 
         .movie-poster__info {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 28px 30px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 2;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
         }
 
         .movie-poster__title {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 800;
-            line-height: 1.15;
+            line-height: 1.1;
             margin-bottom: 10px;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            letter-spacing: -0.5px;
         }
 
         .movie-poster__meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 14px;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
+            gap: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .movie-poster__tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 4px 12px;
-            border-radius: 20px;
-            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* ===== Download Section ===== */
+        /* Download Section */
         .download-section {
-            padding: 28px 30px 32px;
-            background: rgba(0, 0, 0, 0.25);
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.2);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
         }
 
         .download-section__title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 20px;
-            color: rgba(255, 255, 255, 0.8);
-            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 700;
         }
 
         .download-section__buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-        }
-
-        /* ===== Download Buttons ===== */
-        .dl-btn {
-            position: relative;
             display: flex;
             flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Buttons */
+        .dl-btn {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 20px 16px;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-radius: 12px;
             border: none;
-            border-radius: 14px;
-            font-family: inherit;
             cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #fff;
+            font-family: inherit;
+            position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .dl-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .dl-btn:hover::before {
-            opacity: 1;
-        }
-
-        .dl-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-        }
-
-        .dl-btn:active {
-            transform: translateY(-2px) scale(0.98);
+            font-weight: 600;
         }
 
         .dl-btn--480 {
-            background: linear-gradient(135deg, #3a3a4a, #2a2a3a);
-            color: #ccc;
+            background: rgba(255, 255, 255, 0.08);
+            /* Neutral */
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .dl-btn--720 {
-            background: linear-gradient(135deg, #4361ee, #3651d4);
-            color: #fff;
+            background: linear-gradient(90deg, rgba(67, 97, 238, 0.2), rgba(67, 97, 238, 0.1));
+            border: 1px solid rgba(67, 97, 238, 0.3);
+            color: #a5b4fc;
         }
 
         .dl-btn--1080 {
-            background: linear-gradient(135deg, #e94560, #c73650);
-            color: #fff;
+            background: linear-gradient(90deg, rgba(233, 69, 96, 0.2), rgba(233, 69, 96, 0.1));
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            color: #fda4af;
         }
 
-        .dl-btn--1080:hover {
-            box-shadow: 0 12px 30px rgba(233, 69, 96, 0.35);
+        .dl-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
         }
 
-        /* ===== Disabled / Expired Button ===== */
+        .dl-btn:hover:not(:disabled) .dl-btn__icon {
+            transform: scale(1.1);
+        }
+
         .dl-btn--disabled {
-            opacity: 0.35;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.2);
             cursor: not-allowed;
-            filter: grayscale(0.8);
             pointer-events: none;
         }
 
-        .dl-btn--disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-        .dl-btn__expired {
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.12);
-            padding: 2px 8px;
-            border-radius: 6px;
-        }
-
-        .dl-btn--checking {
-            opacity: 0.6;
-            cursor: wait;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 0.6;
-            }
-
-            50% {
-                opacity: 0.85;
-            }
-        }
-
         .dl-btn__icon {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
             fill: currentColor;
-            opacity: 0.85;
+            transition: transform 0.3s;
         }
 
         .dl-btn__quality {
-            font-size: 1.15rem;
-            font-weight: 700;
+            font-size: 1rem;
+            margin-right: auto;
         }
 
         .dl-btn__size {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             opacity: 0.7;
-            font-weight: 500;
         }
 
-        /* ===== Notification Toast ===== */
+        .dl-btn__expired {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ef9a9a;
+        }
+
+        /* ===== Toast ===== */
         .toast {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
-            padding: 14px 22px;
-            border-radius: 12px;
-            background: rgba(15, 12, 41, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(16px);
-            color: #fff;
-            font-size: 0.9rem;
-            font-weight: 500;
-            z-index: 9999;
-            transform: translateX(calc(100% + 40px));
-            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(255, 255, 255, 0.95);
+            color: #0f0c29;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
         }
 
         .toast--visible {
-            transform: translateX(0);
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
 
         /* ===== Footer ===== */
         .footer {
-            padding: 18px 20px;
             text-align: center;
-            background: rgba(0, 0, 0, 0.3);
-            font-size: 0.78rem;
-            color: rgba(255, 255, 255, 0.35);
-            letter-spacing: 0.3px;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.8rem;
         }
 
-        /* ===== Responsive — Tablet ===== */
-        @media (max-width: 768px) {
-            .movie-poster {
-                height: 360px;
-            }
-
-            .movie-poster__title {
-                font-size: 1.7rem;
-            }
-
-            .download-section__buttons {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            .dl-btn {
-                flex-direction: row;
-                padding: 16px 20px;
-                gap: 12px;
-            }
-
-            .dl-btn__quality {
-                font-size: 1.05rem;
-            }
+        /* ===== Background Glows ===== */
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: var(--primary);
+            filter: blur(150px);
+            opacity: 0.15;
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
         }
 
-        /* ===== Responsive — Small Phone ===== */
-        @media (max-width: 480px) {
-            html {
-                font-size: 14px;
-            }
-
-            .header {
-                padding: 12px 16px;
-            }
-
-            .header__logo {
-                font-size: 1.4rem;
-            }
-
-            .movie-poster {
-                height: 280px;
-            }
-
-            .movie-poster__title {
-                font-size: 1.4rem;
-            }
-
-            .movie-poster__info {
-                padding: 18px 16px;
-            }
-
-            .download-section {
-                padding: 20px 16px 24px;
-            }
-
-            .main {
-                padding: 20px 12px;
-            }
-
-            .toast {
-                left: 12px;
-                right: 12px;
-                bottom: 12px;
-                text-align: center;
-            }
+        .bg-glow--1 {
+            top: -200px;
+            right: -200px;
         }
 
-        /* ===== Responsive — Large Desktop ===== */
-        @media (min-width: 1200px) {
-            .movie-poster {
-                height: 540px;
-            }
+        .bg-glow--2 {
+            bottom: -200px;
+            left: -200px;
+            background: #4361ee;
         }
 
-        /* ===== Loading Animation ===== */
+        /* ===== Animation Keyframes ===== */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -533,65 +402,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- CONFIG DATA (Updated by Admin Panel) -->
-    <script id="movie-data" type="application/json">
-    {
-      "expiryTime": "2026-02-13T12:30:00+05:30",
-      "movies": [
-        {
-          "title": "Epic Adventure",
-          "poster": "https://picsum.photos/seed/movie1/800/540.jpg",
-          "rating": "8.5", "year": "2023", "duration": "2h 28min", "genre": "Action / Adventure",
-          "qualities": [
-            { "label": "480p", "size": "1 GB", "url": "#" },
-            { "label": "720p", "size": "2 GB", "url": "#" },
-            { "label": "1080p", "size": "4 GB", "url": "#" }
-          ]
-        },
-        {
-          "title": "Midnight Shadows",
-          "poster": "https://picsum.photos/seed/movie2/800/540.jpg",
-          "rating": "7.9", "year": "2024", "duration": "1h 52min", "genre": "Thriller / Mystery",
-          "qualities": [
-            { "label": "480p", "size": "1 GB", "url": "#" },
-            { "label": "720p", "size": "2 GB", "url": "#" },
-            { "label": "1080p", "size": "4 GB", "url": "#" }
-          ]
-        },
-        {
-          "title": "Crimson Horizon",
-          "poster": "https://picsum.photos/seed/movie3/800/540.jpg",
-          "rating": "8.2", "year": "2025", "duration": "2h 15min", "genre": "Sci-Fi / Drama",
-          "qualities": [
-            { "label": "480p", "size": "1 GB", "url": "#" },
-            { "label": "720p", "size": "2 GB", "url": "#" },
-            { "label": "1080p", "size": "4 GB", "url": "#" }
-          ]
-        },
-        {
-          "title": "Ocean's Echo",
-          "poster": "https://picsum.photos/seed/movie4/800/540.jpg",
-          "rating": "7.5", "year": "2024", "duration": "1h 48min", "genre": "Romance / Drama",
-          "qualities": [
-            { "label": "480p", "size": "1 GB", "url": "#" },
-            { "label": "720p", "size": "2 GB", "url": "#" },
-            { "label": "1080p", "size": "4 GB", "url": "#" }
-          ]
-        },
-        {
-          "title": "Steel Fury",
-          "poster": "https://picsum.photos/seed/movie5/800/540.jpg",
-          "rating": "8.8", "year": "2025", "duration": "2h 35min", "genre": "Action / War",
-          "qualities": [
-            { "label": "480p", "size": "1 GB", "url": "#" },
-            { "label": "720p", "size": "2 GB", "url": "#" },
-            { "label": "1080p", "size": "4 GB", "url": "#" }
-          ]
-        }
-      ]
-    }
-    </script>
-
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
@@ -618,11 +428,7 @@
 
         /* ===========================
            Components (DownloadIcon, Header, MoviePoster, DownloadButton, DownloadSection, Toast, Footer, BackgroundGlows)
-           ... (Keep as is, defined in original file, just ensuring App logic changes) ... 
         =========================== */
-
-        // (Redefine components here if needed, but since I am replacing from line 534...)
-        // Wait, I am replacing from 534 to 850. I need to include ALL components.
 
         function DownloadIcon() {
             return (
@@ -726,17 +532,9 @@
            App
         =========================== */
         function App() {
-            // Read config from embedded script tag
-            const [movies, setMovies] = useState(() => {
-                try {
-                    const data = document.getElementById("movie-data").textContent;
-                    const config = JSON.parse(data);
-                    return parseConfig(config);
-                } catch (e) {
-                    console.error("Failed to parse embedded movie data", e);
-                    return [];
-                }
-            });
+            const [movies, setMovies] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
 
             const [toastMsg, setToastMsg] = useState("");
             const [toastVisible, setToastVisible] = useState(false);
@@ -745,6 +543,24 @@
             useEffect(() => {
                 const interval = setInterval(() => setNow(Date.now()), 1000);
                 return () => clearInterval(interval);
+            }, []);
+
+            // Fetch Config
+            useEffect(() => {
+                fetch('config.json?t=' + Date.now())
+                    .then(res => {
+                        if (!res.ok) throw new Error("Failed to load config");
+                        return res.json();
+                    })
+                    .then(data => {
+                        setMovies(parseConfig(data));
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        setError("Could not load movies. Please try again later.");
+                        setLoading(false);
+                    });
             }, []);
 
             const showToast = useCallback((msg, duration = 3000) => {
@@ -769,6 +585,32 @@
                     }
                 }, 1000);
             }, [showToast]);
+
+            if (loading) {
+                return (
+                    <div style={{
+                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        height: '100vh', color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem'
+                    }}>
+                        Loading MovieVault...
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div style={{
+                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        height: '100vh', color: '#ef9a9a', fontSize: '1.2rem', flexDirection: 'column'
+                    }}>
+                        <div>⚠️ {error}</div>
+                        <button onClick={() => window.location.reload()} style={{
+                            marginTop: '20px', padding: '10px 20px', background: 'white',
+                            border: 'none', borderRadius: '5px', cursor: 'pointer'
+                        }}>Retry</button>
+                    </div>
+                );
+            }
 
             return (
                 <>

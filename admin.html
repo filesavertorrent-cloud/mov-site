@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <style>
+        /* (Same CSS as before) */
         *,
         *::before,
         *::after {
@@ -518,7 +519,7 @@
         const GITHUB_OWNER = "connectwithmreditor-tech";
         const GITHUB_REPO = "mov";
         const GITHUB_BRANCH = "main";
-        const CONFIG_PATH = "index.html";
+        const CONFIG_PATH = "config.json";
         const API_BASE = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CONFIG_PATH}`;
 
         let currentConfig = null;
@@ -583,7 +584,7 @@
                 {
                     title: "Midnight Shadows",
                     poster: "https://picsum.photos/seed/movie2/800/540.jpg",
-                    rating: "7.9", "year": "2024", duration: "1h 52min", genre: "Thriller / Mystery",
+                    rating: "7.9", "year": "2024", duration: "1h 52min", "genre": "Thriller / Mystery",
                     qualities: [
                         { label: "480p", size: "1 GB", url: "" },
                         { label: "720p", size: "2 GB", url: "" },
@@ -593,7 +594,7 @@
                 {
                     title: "Crimson Horizon",
                     poster: "https://picsum.photos/seed/movie3/800/540.jpg",
-                    rating: "8.2", "year": "2025", duration: "2h 15min", genre: "Sci-Fi / Drama",
+                    rating: "8.2", "year": "2025", duration: "2h 15min", "genre": "Sci-Fi / Drama",
                     qualities: [
                         { label: "480p", size: "1 GB", url: "" },
                         { label: "720p", size: "2 GB", url: "" },
@@ -603,7 +604,7 @@
                 {
                     title: "Ocean's Echo",
                     poster: "https://picsum.photos/seed/movie4/800/540.jpg",
-                    rating: "7.5", "year": "2024", duration: "1h 48min", genre: "Romance / Drama",
+                    rating: "7.5", "year": "2024", duration: "1h 48min", "genre": "Romance / Drama",
                     qualities: [
                         { label: "480p", size: "1 GB", url: "" },
                         { label: "720p", size: "2 GB", url: "" },
@@ -613,7 +614,7 @@
                 {
                     title: "Steel Fury",
                     poster: "https://picsum.photos/seed/movie5/800/540.jpg",
-                    rating: "8.8", year: "2025", duration: "2h 35min", genre: "Action / War",
+                    rating: "8.8", year: "2025", duration: "2h 35min", "genre": "Action / War",
                     qualities: [
                         { label: "480p", size: "1 GB", url: "" },
                         { label: "720p", size: "2 GB", url: "" },
@@ -624,20 +625,48 @@
         };
 
         /* ===========================
-           Load Config (Template Only)
+           Load Config
         =========================== */
-        function loadConfig() {
-            // Use the template immediately. No fetching.
-            currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE)); // Deep copy
+        async function loadConfig() {
+            showStatus("loading", "Loading config...");
+            try {
+                // 1. Try fetching from GitHub API (most up-to-date, requires token if private, but helps avoid cache)
+                const pat = getPat();
+                if (pat) {
+                    const res = await fetch(API_BASE + "?ref=" + GITHUB_BRANCH + "&t=" + Date.now(), {
+                        headers: {
+                            "Authorization": `Bearer ${pat}`,
+                            "Accept": "application/vnd.github.v3+json"
+                        }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        currentSha = data.sha;
+                        const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ""))));
+                        currentConfig = JSON.parse(content);
+                        renderMovies(currentConfig);
+                        renderStatus(currentConfig);
+                        showStatus("success", "✅ Config loaded from GitHub!");
+                        return;
+                    }
+                }
 
-            // Render
-            renderMovies(currentConfig);
-
-            // Just show basic status (no timer info since we don't know it yet)
-            document.getElementById("status-section").style.display = "none";
-
-            // Optional: Try to fetch ONLY to show current timer/status? 
-            // The user wants "no config", so let's stick to that.
+                // 2. Fallback: Try fetching directly (public cache)
+                const res = await fetch(CONFIG_PATH + "?t=" + Date.now());
+                if (res.ok) {
+                    currentConfig = await res.json();
+                    renderMovies(currentConfig);
+                    renderStatus(currentConfig);
+                    showStatus("success", "✅ Loaded successfully (Public)");
+                } else {
+                    throw new Error("Config not found");
+                }
+            } catch (e) {
+                console.error(e);
+                currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE));
+                renderMovies(currentConfig);
+                showStatus("error", "⚠️ Could not load config. Using default template.");
+            }
         }
 
         /* ===========================
@@ -754,7 +783,7 @@
         }
 
         /* ===========================
-           Save & Push to GitHub (Targeting index.html)
+           Save & Push to GitHub (Targeting config.json)
         =========================== */
         async function saveAndPush(retry = true) {
             const pat = getPat();
@@ -772,62 +801,35 @@
             const saveBtn = document.getElementById("save-btn");
             saveBtn.disabled = true;
             saveBtn.textContent = retry ? "⏳ Pushing to GitHub..." : "⏳ Retying push...";
-            showStatus("loading", retry ? "Fetching index.html & Updating..." : "Conflict detected! Retrying update...");
+            showStatus("loading", retry ? "Updating config.json..." : "Conflict detected! Retrying...");
 
             try {
-                // 1. Fetch current index.html content & SHA
-                // We ALWAYS need to fetch content to perform the replacement safely
-                let currentSha = null;
-                let fileContent = "";
-
-                try {
-                    const fileRes = await fetch(API_BASE + `?ref=${GITHUB_BRANCH}&t=` + Date.now(), {
-                        headers: {
-                            "Authorization": `Bearer ${pat}`,
-                            "Accept": "application/vnd.github.v3+json"
+                // Fetch SHA if we don't have it (or if retrying)
+                if (!currentSha || retry) {
+                    try {
+                        const shaRes = await fetch(API_BASE + `?ref=${GITHUB_BRANCH}&t=` + Date.now(), {
+                            headers: {
+                                "Authorization": `Bearer ${pat}`,
+                                "Accept": "application/vnd.github.v3+json"
+                            }
+                        });
+                        if (shaRes.ok) {
+                            const shaData = await shaRes.json();
+                            currentSha = shaData.sha;
                         }
-                    });
-
-                    if (fileRes.ok) {
-                        const fileData = await fileRes.json();
-                        currentSha = fileData.sha;
-                        // Decode content
-                        fileContent = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ""))));
-                    } else {
-                        throw new Error(`Failed to fetch index.html (${fileRes.status})`);
-                    }
-                } catch (e) {
-                    console.error(e);
-                    showStatus("error", "Could not fetch index.html. Check token/network.");
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = "💾 Save & Push to GitHub";
-                    return;
+                    } catch (e) { console.warn(e); }
                 }
 
-                // 2. Replace JSON in script tag
-                const newConfigJSON = JSON.stringify(config, null, 2);
-                const regex = /(<script id="movie-data" type="application\/json">)([\s\S]*?)(<\/script>)/;
+                // Encode JSON
+                const contentEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
 
-                if (fileContent.match(regex)) {
-                    fileContent = fileContent.replace(regex, `$1\n${newConfigJSON}\n$3`);
-                } else {
-                    console.error("Could not find script tag in index.html");
-                    showStatus("error", "Critical: <script id='movie-data'> not found in index.html!");
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = "💾 Save & Push to GitHub";
-                    return;
-                }
-
-                // 3. Encode back to Base64
-                const contentEncoded = btoa(unescape(encodeURIComponent(fileContent)));
-
-                // 4. Push Update
                 const body = {
-                    message: `Update movie links & timer (${new Date().toLocaleString()})`,
+                    message: `Update config.json (${new Date().toLocaleString()})`,
                     content: contentEncoded,
-                    branch: GITHUB_BRANCH,
-                    sha: currentSha
+                    branch: GITHUB_BRANCH
                 };
+
+                if (currentSha) body.sha = currentSha;
 
                 const res = await fetch(API_BASE, {
                     method: "PUT",
@@ -841,34 +843,35 @@
 
                 if (res.ok) {
                     const data = await res.json();
+                    currentSha = data.content.sha;
+                    currentConfig = config;
                     renderStatus(config);
-                    showStatus("success", "✅ Website updated! Redirecting to home page...");
+                    showStatus("success", "✅ Config updated! Refresh your website.");
 
-                    // Redirect after 2 seconds
+                    // No redirect needed really if we are just updating config
+                    // But we can reload to show fresh state
                     setTimeout(() => {
-                        window.location.href = "index.html";
-                    }, 2000);
+                        showStatus("success", "✅ Config updated! You can close this or edit again.");
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = "💾 Save & Push to GitHub";
+                    }, 1000);
+
                 } else {
-                    // Handle Conflict (Retry logic)
                     if (res.status === 409 && retry) {
-                        showStatus("loading", "⚠️ Conflict detected. Retrying update...");
-                        await saveAndPush(false); // Recursive retry (will re-fetch SHA & Content)
+                        showStatus("loading", "⚠️ Conflict detected. Retrying...");
+                        await saveAndPush(false);
                         return;
                     }
 
                     const err = await res.json();
-                    if (res.status === 401) {
-                        showStatus("error", "❌ Invalid token. Make sure your PAT has 'repo' scope.");
-                    } else {
-                        showStatus("error", `❌ Error ${res.status}: ${err.message}`);
-                    }
+                    showStatus("error", `❌ Error ${res.status}: ${err.message}`);
                     saveBtn.disabled = false;
                     saveBtn.textContent = "💾 Save & Push to GitHub";
                 }
 
             } catch (e) {
-                console.error("Save failed:", e);
-                showStatus("error", "❌ Network error. Check console for details.");
+                console.error(e);
+                showStatus("error", `❌ Network error: ${e.message}`);
                 saveBtn.disabled = false;
                 saveBtn.textContent = "💾 Save & Push to GitHub";
             }
@@ -886,8 +889,7 @@
         /* ===========================
            Init
         =========================== */
-        // We call loadConfig inside showApp() now to save resources
-        // loadConfig(); 
+        // Called by showApp
     </script>
 </body>
 
