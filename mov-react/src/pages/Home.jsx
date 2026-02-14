@@ -10,7 +10,6 @@ import DownloadSection from '../components/DownloadSection';
 import { fetchConfig } from '../services/configService';
 import '../styles/index.css';
 
-// Helper to parse config
 function parseConfig(config) {
     const expiresAt = new Date(config.expiryTime).getTime();
     const classMap = { "480p": "dl-btn--480", "720p": "dl-btn--720", "1080p": "dl-btn--1080" };
@@ -35,32 +34,47 @@ function Home() {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     const [toastMsg, setToastMsg] = useState("");
     const [toastVisible, setToastVisible] = useState(false);
     const [now, setNow] = useState(Date.now());
     const [requests, setRequests] = useState([]);
     const [requestModalOpen, setRequestModalOpen] = useState(false);
+    const [requestInput, setRequestInput] = useState("");
 
-    // Timer effect
+    // Helper: get pending requests from localStorage
+    const getLocalRequests = () => {
+        try {
+            return JSON.parse(localStorage.getItem('mv_pending_requests') || '[]');
+        } catch { return []; }
+    };
+
+    // Helper: save pending requests to localStorage
+    const saveLocalRequests = (reqs) => {
+        localStorage.setItem('mv_pending_requests', JSON.stringify(reqs));
+    };
+
     useEffect(() => {
         const interval = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(interval);
     }, []);
 
-    // Fetch Config effect
     useEffect(() => {
         const loadData = async () => {
             try {
                 const data = await fetchConfig();
-                // Merge active requests if present in config
-                if (data.requests) {
-                    setRequests(prev => [...data.requests, ...prev]);
-                }
+                // Merge: GitHub config requests (approved ones) + localStorage pending requests
+                const configRequests = data.requests || [];
+                const localPending = getLocalRequests();
+                // Combine: config requests first, then local pending (avoiding duplicates)
+                const configTitles = new Set(configRequests.map(r => r.title.toLowerCase()));
+                const uniqueLocal = localPending.filter(r => !configTitles.has(r.title.toLowerCase()));
+                setRequests([...configRequests, ...uniqueLocal]);
                 setMovies(parseConfig(data));
                 setLoading(false);
             } catch (err) {
                 console.error("Failed to load config:", err);
+                // Still load local requests even if config fails
+                setRequests(getLocalRequests());
                 setError("Failed to load movie data.");
                 setLoading(false);
             }
@@ -75,20 +89,36 @@ function Home() {
         return () => clearTimeout(timer);
     }, []);
 
-    const handleRequestSubmit = useCallback((title) => {
+    const handleHeroRequest = useCallback((e) => {
+        e.preventDefault();
+        if (!requestInput.trim()) return;
+        const newRequest = { title: requestInput.trim(), status: 'pending', date: new Date().toISOString() };
+        setRequests(prev => {
+            const updated = [newRequest, ...prev];
+            // Save all pending to localStorage
+            saveLocalRequests(updated.filter(r => r.status === 'pending'));
+            return updated;
+        });
+        setRequestInput("");
+        showToast("Movie request submitted! 🎬 Awaiting admin approval.");
+    }, [requestInput, showToast]);
+
+    const handleModalRequest = useCallback((title) => {
         const newRequest = { title, status: 'pending', date: new Date().toISOString() };
-        setRequests(prev => [newRequest, ...prev]);
+        setRequests(prev => {
+            const updated = [newRequest, ...prev];
+            saveLocalRequests(updated.filter(r => r.status === 'pending'));
+            return updated;
+        });
         setRequestModalOpen(false);
-        showToast("Request submitted for approval! 🚀");
+        showToast("Movie request submitted! 🎬 Awaiting admin approval.");
     }, [showToast]);
 
     const handleDownload = useCallback((quality) => {
-        // Simple download handler
         if (!quality.url || quality.url === '#') {
             showToast("Link not available");
             return;
         }
-
         showToast(`Starting ${quality.label} download (${quality.size})...`);
         let count = 3;
         const interval = setInterval(() => {
@@ -106,46 +136,55 @@ function Home() {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                height: '100vh', color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem',
-                background: 'var(--dark)'
-            }}>
-                Loading MovieVault...
+            <div className="loading-screen">
+                <div className="loading-spinner"></div>
+                <p>Loading MovieVault...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                height: '100vh', color: '#ef9a9a', fontSize: '1.2rem', flexDirection: 'column',
-                background: 'var(--dark)'
-            }}>
-                <div>⚠️ {error}</div>
-                <button onClick={() => window.location.reload()} style={{
-                    marginTop: '20px', padding: '10px 20px', background: 'white',
-                    border: 'none', borderRadius: '5px', cursor: 'pointer', color: '#333'
-                }}>Retry</button>
+            <div className="error-screen">
+                <div className="error-icon">⚠️</div>
+                <div className="error-text">{error}</div>
+                <button onClick={() => window.location.reload()} className="error-retry-btn">Retry</button>
             </div>
         );
     }
+
+    const approvedRequests = requests.filter(r => r.status === 'approved');
 
     return (
         <div className="home-page">
             <BackgroundGlows />
             <Header />
 
-            <main className="main" style={{ marginTop: '100px' }}>
-                <div className="fade-in-up">
-                    <button onClick={() => setRequestModalOpen(true)} className="hero-request-btn">
-                        💬 Request a Movie
-                    </button>
+            {/* Hero Request Section */}
+            <section className="hero-section fade-in-up">
+                <div className="hero-content">
+                    <h2 className="hero-title">🎬 Request a Movie</h2>
+                    <p className="hero-subtitle">Can't find what you're looking for? Tell us!</p>
+                    <form className="hero-form" onSubmit={handleHeroRequest}>
+                        <input
+                            type="text"
+                            value={requestInput}
+                            onChange={e => setRequestInput(e.target.value)}
+                            placeholder="Enter movie name..."
+                            className="hero-input"
+                        />
+                        <button type="submit" className="hero-submit-btn">
+                            Submit Request
+                        </button>
+                    </form>
                 </div>
+            </section>
 
-                <RequestCloud requests={requests} />
+            {/* Approved Requests Cloud */}
+            {approvedRequests.length > 0 && <RequestCloud requests={approvedRequests} />}
 
+            {/* Movies Grid */}
+            <main className="main">
                 {movies.map((movie, i) => (
                     <div key={i} className="movie-card fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
                         <MoviePoster movie={movie} />
@@ -153,13 +192,13 @@ function Home() {
                     </div>
                 ))}
             </main>
+
             <Footer />
             <Toast message={toastMsg} visible={toastVisible} />
             <RequestModal
                 visible={requestModalOpen}
                 onClose={() => setRequestModalOpen(false)}
-                onRequestSubmit={handleRequestSubmit}
-                requests={requests}
+                onRequestSubmit={handleModalRequest}
             />
         </div>
     );
