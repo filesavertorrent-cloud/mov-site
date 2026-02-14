@@ -1,7 +1,7 @@
 const GITHUB_OWNER = "connectwithmreditor-tech";
 const GITHUB_REPO = "Movie";
 const GITHUB_BRANCH = "main";
-const CONFIG_PATH = "public/config.json";
+const CONFIG_PATH = "mov-react/public/config.json";
 
 const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${CONFIG_PATH}`;
 
