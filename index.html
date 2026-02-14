@@ -397,6 +397,54 @@
             animation-delay: 0.4s;
             opacity: 0;
         }
+
+        /* ===== Ticker ===== */
+        .ticker-wrap {
+            position: fixed;
+            top: 70px;
+            /* Below header */
+            width: 100%;
+            overflow: hidden;
+            height: 40px;
+            background-color: rgba(15, 12, 41, 0.9);
+            padding-left: 100%;
+            box-sizing: content-box;
+            z-index: 99;
+            border-bottom: 1px solid var(--glass-border);
+            pointer-events: none;
+            /* Let clicks pass through if needed, but usually we want it visible */
+        }
+
+        .ticker {
+            display: inline-block;
+            height: 40px;
+            line-height: 40px;
+            white-space: nowrap;
+            padding-right: 100%;
+            box-sizing: content-box;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+            animation-name: ticker;
+            animation-duration: 30s;
+        }
+
+        .ticker__item {
+            display: inline-block;
+            padding: 0 2rem;
+            font-size: 0.9rem;
+            color: #ffd700;
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translate3d(0, 0, 0);
+                visibility: visible;
+            }
+
+            100% {
+                transform: translate3d(-100%, 0, 0);
+            }
+        }
     </style>
 </head>
 
@@ -511,7 +559,7 @@
             );
         }
 
-        function Header() {
+        function Header({ onRequestOpen }) {
             return (
                 <header className="header fade-in-up">
                     <div style={{ width: '90px' }} />
@@ -519,7 +567,12 @@
                         <div className="header__logo">MovieVault</div>
                         <div className="header__tagline">Your Premium Movie Collection</div>
                     </div>
-                    <a href="admin.html" className="header__admin-btn">⚙️ Admin</a>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={onRequestOpen} className="header__admin-btn" style={{ background: 'rgba(67, 97, 238, 0.1)', borderColor: 'rgba(67, 97, 238, 0.3)', color: '#a5b4fc' }}>
+                            💬 Request
+                        </button>
+                        <a href="admin.html" className="header__admin-btn">⚙️ Admin</a>
+                    </div>
                 </header>
             );
         }
@@ -602,6 +655,26 @@
         }
 
         /* ===========================
+           Components
+        =========================== */
+
+        function RequestTicker({ requests }) {
+            const approved = requests.filter(r => r.status === 'approved');
+
+            if (approved.length === 0) return null;
+
+            return (
+                <div className="ticker-wrap">
+                    <div className="ticker">
+                        {approved.map((req, i) => (
+                            <div key={i} className="ticker__item">✨ Requested: {req.title}</div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        /* ===========================
            App
         =========================== */
         function App() {
@@ -612,6 +685,8 @@
             const [toastMsg, setToastMsg] = useState("");
             const [toastVisible, setToastVisible] = useState(false);
             const [now, setNow] = useState(Date.now());
+            const [requests, setRequests] = useState([]); // Added for RequestTicker
+            const [requestModalOpen, setRequestModalOpen] = useState(false); // Added for Header prop
 
             useEffect(() => {
                 const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -709,8 +784,9 @@
             return (
                 <>
                     <BackgroundGlows />
-                    <Header />
-                    <main className="main">
+                    <Header onRequestOpen={() => setRequestModalOpen(true)} />
+                    <RequestTicker requests={requests} />
+                    <main className="main" style={{ marginTop: '40px' }}>
                         {movies.map((movie, i) => (
                             <div key={i} className="movie-card fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
                                 <MoviePoster movie={movie} />
@@ -720,6 +796,12 @@
                     </main>
                     <Footer />
                     <Toast message={toastMsg} visible={toastVisible} />
+                    <RequestModal
+                        visible={requestModalOpen}
+                        onClose={() => setRequestModalOpen(false)}
+                        requests={requests}
+                        onRequestSubmit={handleRequestSubmit}
+                    />
                 </>
             );
         }

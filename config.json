@@ -252,14 +252,5 @@
       ]
     }
   ],
-  "requests": [
-    {
-      "title": "Avatar 2",
-      "votes": 12
-    },
-    {
-      "title": "Spider-Man: No Way Home",
-      "votes": 8
-    }
-  ]
+  "requests": []
 }
