@@ -219,6 +219,11 @@ function Admin() {
                 `Update config via Admin Panel (${new Date().toLocaleString()})`
             );
             setSha(res.content.sha);
+            // Optimistic Cache: Specific for Admin user to see changes immediately
+            localStorage.setItem('mv_cache_config', JSON.stringify({
+                data: config,
+                timestamp: Date.now()
+            }));
             // Clear localStorage pending requests since they're now in GitHub
             localStorage.removeItem('mv_pending_requests');
             setStatus("Changes saved & pushed to GitHub! ✅ Will be live shortly.", "success");
@@ -278,6 +283,7 @@ function Admin() {
             <div className="admin-loading">
                 <div className="admin-spinner"></div>
                 <p>Loading Dashboard...</p>
+                {statusMsg && <div className="admin-status admin-status--error" style={{ marginTop: '20px' }}>{statusMsg}</div>}
             </div>
         );
     }

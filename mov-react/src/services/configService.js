@@ -12,6 +12,19 @@ const DEFAULT_CONFIG = {
 };
 
 export const fetchConfig = async () => {
+    // Optimistic Cache: Check for local config saved by Admin panel (valid for 5 mins)
+    try {
+        const cached = localStorage.getItem('mv_cache_config');
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < 5 * 60 * 1000) {
+                console.log("Using local optimistic config");
+                if (!data.requests) data.requests = [];
+                return data;
+            }
+        }
+    } catch (e) { /* ignore */ }
+
     try {
         // Try GitHub raw content first (for production on GitHub Pages)
         const res = await fetch(RAW_URL + '?t=' + Date.now());
