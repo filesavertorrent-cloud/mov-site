@@ -477,12 +477,27 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Save Button -->
-        <button class="btn-primary" id="save-btn" onclick="saveAndPush()">
-            💾 Save & Push to GitHub
-        </button>
-        <div class="status" id="status-msg"></div>
+    <!-- Requests Section -->
+    <div class="section fade-in" id="requests-section">
+        <div class="section__title">💬 Manage Requests</div>
+
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="new-request-title" placeholder="Add new request manually..." />
+            <button class="btn-primary" style="width:auto; padding:10px 20px;" onclick="addRequest()">Add</button>
+        </div>
+
+        <div id="requests-container" style="display:flex; flex-direction:column; gap:10px;">
+            <!-- Requests injected here -->
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <button class="btn-primary" id="save-btn" onclick="saveAndPush()">
+        💾 Save & Push to GitHub
+    </button>
+    <div class="status" id="status-msg"></div>
     </div>
 
     <script>
@@ -622,7 +637,8 @@
                         { label: "1080p", size: "4 GB", url: "" }
                     ]
                 }
-            ]
+            ],
+            requests: []
         };
 
         /* ===========================
@@ -669,7 +685,9 @@
                         const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ""))));
                         currentConfig = JSON.parse(content);
                         console.log("Loaded from API");
+                        if (!currentConfig.requests) currentConfig.requests = [];
                         renderMovies(currentConfig);
+                        renderRequests(currentConfig);
                         renderStatus(currentConfig);
                         showStatus("success", "✅ Config loaded from GitHub API!");
                         return;
@@ -688,7 +706,9 @@
                     clearTimeout(timeout);
                     currentConfig = await res.json();
                     console.log("Loaded from Direct Link");
+                    if (!currentConfig.requests) currentConfig.requests = [];
                     renderMovies(currentConfig);
+                    renderRequests(currentConfig);
                     renderStatus(currentConfig);
                     showStatus("success", "✅ Loaded successfully (Direct Link)");
                 } else {
@@ -700,6 +720,7 @@
                 // Fallback to template if everything fails
                 currentConfig = JSON.parse(JSON.stringify(MOVIES_TEMPLATE));
                 renderMovies(currentConfig);
+                renderRequests(currentConfig);
                 showStatus("error", `⚠️ Error: ${e.message}. Using default template.`);
             }
         }
@@ -728,6 +749,7 @@
 
             info.innerHTML = `
                 <div class="info-chip"><strong>Movies:</strong> ${config.movies.length}</div>
+                <div class="info-chip"><strong>Requests:</strong> ${config.requests ? config.requests.length : 0}</div>
                 <div class="info-chip"><strong>Expiry:</strong> ${expiry.toLocaleString()}</div>
                 <div class="info-chip"><strong>Timer:</strong> ${timerStatus}</div>
             `;
@@ -800,6 +822,10 @@
                                     <input type="text" id="genre-${i}" value="${movie.genre}" placeholder="e.g. Action" />
                                 </div>
                             </div>
+                            <!-- Delete Movie Button -->
+                            <div style="text-align:right; margin-top:5px;">
+                                <button onclick="deleteMovie(${i})" style="font-size:0.7rem; color:#ef9a9a; background:none; border:none; cursor:pointer; text-decoration:underline;">Delete Movie</button>
+                            </div>
                         </div>
                     </div>
                     <label style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Download Links</label>
@@ -808,6 +834,94 @@
 
                 container.appendChild(card);
             });
+
+            // Add "Add Movie" button at bottom of container
+            const addBtn = document.createElement("button");
+            addBtn.innerHTML = "➕ Add New Movie";
+            addBtn.className = "btn-primary";
+            addBtn.style.marginTop = "10px";
+            addBtn.style.background = "rgba(255,255,255,0.05)";
+            addBtn.style.border = "1px dashed rgba(255,255,255,0.2)";
+            addBtn.onclick = addNewMovie;
+            container.appendChild(addBtn);
+        }
+
+        /* ===========================
+           Render Requests
+        =========================== */
+        function renderRequests(config) {
+            const container = document.getElementById("requests-container");
+            container.innerHTML = "";
+
+            if (!config.requests || config.requests.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.3); font-size:0.8rem;">No pending requests</div>`;
+                return;
+            }
+
+            config.requests.forEach((req, i) => {
+                const el = document.createElement("div");
+                el.style.display = "flex";
+                el.style.justifyContent = "space-between";
+                el.style.alignItems = "center";
+                el.style.background = "rgba(255,255,255,0.05)";
+                el.style.padding = "10px 14px";
+                el.style.borderRadius = "8px";
+                el.style.border = "1px solid rgba(255,255,255,0.05)";
+
+                el.innerHTML = `
+                    <div style="font-weight:500;">${req.title} <span style="font-size:0.7rem; opacity:0.5; margin-left:8px;">(${req.votes || 0} votes)</span></div>
+                    <div style="display:flex; gap:8px;">
+                         <button onclick="deleteRequest(${i})" style="padding:4px 8px; background:rgba(244,67,54,0.2); color:#ef9a9a; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;">Delete</button>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        /* ===========================
+           Actions (Add/Delete)
+        =========================== */
+        function addRequest() {
+            const input = document.getElementById("new-request-title");
+            const title = input.value.trim();
+            if (title) {
+                if (!currentConfig.requests) currentConfig.requests = [];
+                currentConfig.requests.push({ title: title, votes: 0 });
+                input.value = "";
+                renderRequests(currentConfig);
+                renderStatus(currentConfig);
+            }
+        }
+
+        function deleteRequest(idx) {
+            if (confirm("Remove this request?")) {
+                currentConfig.requests.splice(idx, 1);
+                renderRequests(currentConfig);
+                renderStatus(currentConfig);
+            }
+        }
+
+        function addNewMovie() {
+            currentConfig.movies.unshift({
+                title: "New Movie",
+                poster: "https://via.placeholder.com/800x540",
+                rating: "0.0", year: "2024", duration: "0h 00m", genre: "Genre",
+                qualities: [
+                    { label: "480p", size: "0 GB", url: "" },
+                    { label: "720p", size: "0 GB", url: "" },
+                    { label: "1080p", size: "0 GB", url: "" }
+                ]
+            });
+            renderMovies(currentConfig);
+            renderStatus(currentConfig);
+        }
+
+        function deleteMovie(idx) {
+            if (confirm("Delete this movie?")) {
+                currentConfig.movies.splice(idx, 1);
+                renderMovies(currentConfig);
+                renderStatus(currentConfig);
+            }
         }
 
         /* ===========================
