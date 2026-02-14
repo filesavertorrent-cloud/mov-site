@@ -181,7 +181,12 @@ function Home() {
             </section>
 
             {/* Approved Requests Cloud */}
-            {approvedRequests.length > 0 && <RequestCloud requests={approvedRequests} />}
+            {approvedRequests.length > 0 && (
+                <>
+                    <h3 className="requests-title">Requested Movies</h3>
+                    <RequestCloud requests={approvedRequests} />
+                </>
+            )}
 
             {/* Movies Grid */}
             <main className="main">
