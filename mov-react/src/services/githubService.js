@@ -112,3 +112,25 @@ export const closeIssue = async (pat, owner, repo, issueNumber) => {
 
     return await response.json();
 };
+
+export const createIssue = async (pat, owner, repo, title, body) => {
+    const response = await fetch(`${BASE_URL}/repos/${owner}/${repo}/issues`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `token ${pat}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            title: title,
+            body: body,
+            labels: ['movie-request']
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+};

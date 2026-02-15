@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getRepoContent, updateRepoContent, uploadImageToRepo, fetchIssues, closeIssue } from '../services/githubService';
-import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH } from '../services/configService';
+import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH, HARDCODED_PAT } from '../services/configService';
 import '../styles/admin.css';
 
 const ADMIN_PASSWORD = "Abd123*";
-// Split to bypass GitHub secret scanning
-const HARDCODED_PAT_PART1 = "github_pat_11B3TCF3A0E9lMHdcX5JkH_";
-const HARDCODED_PAT_PART2 = "WxfO583LiE6a9NPVx5OSloqDpbwIBD2U6JoZiSF7wttMXXGY3F3acRbDZUa";
-const HARDCODED_PAT = HARDCODED_PAT_PART1 + HARDCODED_PAT_PART2;
 
 function Admin() {
     const [loggedIn, setLoggedIn] = useState(false);

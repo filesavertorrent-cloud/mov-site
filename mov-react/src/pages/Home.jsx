@@ -7,7 +7,8 @@ import RequestCloud from '../components/RequestCloud';
 import RequestModal from '../components/RequestModal';
 import MoviePoster from '../components/MoviePoster';
 import DownloadSection from '../components/DownloadSection';
-import { fetchConfig } from '../services/configService';
+import { fetchConfig, GITHUB_OWNER, GITHUB_REPO, HARDCODED_PAT } from '../services/configService';
+import { createIssue } from '../services/githubService';
 import '../styles/index.css';
 
 function parseConfig(config) {
@@ -69,26 +70,36 @@ function Home() {
         return () => clearTimeout(timer);
     }, []);
 
-    const openGitHubIssue = (title) => {
-        const issueTitle = encodeURIComponent(`Request: ${title}`);
-        const issueBody = encodeURIComponent(`I would like to request the movie: **${title}**.\n\n_Requested via MovieVault_`);
-        const url = `https://github.com/connectwithmreditor-tech/Movie/issues/new?title=${issueTitle}&body=${issueBody}&labels=movie-request`;
-        window.open(url, '_blank');
+    const handleDirectRequest = async (title) => {
+        if (!title.trim()) return;
+        showToast("Submitting request... ⏳", 5000);
+        try {
+            await createIssue(
+                HARDCODED_PAT,
+                GITHUB_OWNER,
+                GITHUB_REPO,
+                `Request: ${title}`,
+                `I would like to request the movie: **${title}**.\n\n_Requested via MovieVault Direct_`
+            );
+            showToast("Request submitted successfully! ✅ Admin will review it.");
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to submit request. Please try again later. ❌");
+        }
     };
 
     const handleHeroRequest = useCallback((e) => {
         e.preventDefault();
         if (!requestInput.trim()) return;
-        openGitHubIssue(requestInput.trim());
+        handleDirectRequest(requestInput.trim());
         setRequestInput("");
-        showToast("Redirecting to GitHub to submit request... 🚀");
     }, [requestInput, showToast]);
 
     const handleModalRequest = useCallback((title) => {
-        openGitHubIssue(title);
+        handleDirectRequest(title);
         setRequestModalOpen(false);
-        showToast("Redirecting to GitHub to submit request... 🚀");
     }, [showToast]);
+
     const handleDownload = useCallback((quality) => {
         if (!quality.url || quality.url === '#') {
             showToast("Link not available");
@@ -106,7 +117,7 @@ function Home() {
                 window.open(quality.url, "_blank");
                 setTimeout(() => showToast(`${quality.label} download started! ✅`, 3500), 2000);
             }
-        }, 1000);
+        }, 1000); // Fixed interval duration
     }, [showToast]);
 
     if (loading) {
