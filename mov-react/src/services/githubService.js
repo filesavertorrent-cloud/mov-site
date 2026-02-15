@@ -77,3 +77,38 @@ export const uploadImageToRepo = async (pat, owner, repo, file) => {
         reader.readAsDataURL(file);
     });
 };
+
+export const fetchIssues = async (pat, owner, repo) => {
+    const response = await fetch(`${BASE_URL}/repos/${owner}/${repo}/issues?state=open&labels=movie-request&sort=created&direction=desc`, {
+        headers: {
+            'Authorization': `token ${pat}`,
+            'Accept': 'application/vnd.github.v3+json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+};
+
+export const closeIssue = async (pat, owner, repo, issueNumber) => {
+    const response = await fetch(`${BASE_URL}/repos/${owner}/${repo}/issues/${issueNumber}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `token ${pat}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            state: 'closed'
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+};

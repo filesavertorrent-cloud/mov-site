@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getRepoContent, updateRepoContent, uploadImageToRepo } from '../services/githubService';
+import { getRepoContent, updateRepoContent, uploadImageToRepo, fetchIssues, closeIssue } from '../services/githubService';
 import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH } from '../services/configService';
 import '../styles/admin.css';
 
@@ -18,6 +18,7 @@ function Admin() {
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState("");
     const [statusType, setStatusType] = useState("");
+    const [githubIssues, setGithubIssues] = useState([]);
 
     // Login
     const [loginPass, setLoginPass] = useState("");
@@ -46,28 +47,23 @@ function Admin() {
 
     const loadConfig = async () => {
         setLoading(true);
-        setStatus("Loading config from GitHub...", "loading");
+        setStatus("Loading config & issues from GitHub...", "loading");
         try {
-            const data = await getRepoContent(pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH);
+            const [data, issues] = await Promise.all([
+                getRepoContent(pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH),
+                fetchIssues(pat, GITHUB_OWNER, GITHUB_REPO)
+            ]);
+
             const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, "")))));
             if (!content.requests) content.requests = [];
 
-            // Merge pending requests from localStorage (submitted from Home page)
-            try {
-                const localPending = JSON.parse(localStorage.getItem('mv_pending_requests') || '[]');
-                if (localPending.length > 0) {
-                    const existingTitles = new Set(content.requests.map(r => r.title.toLowerCase()));
-                    const newRequests = localPending.filter(r => !existingTitles.has(r.title.toLowerCase()));
-                    content.requests = [...content.requests, ...newRequests];
-                }
-            } catch (e) { /* ignore localStorage errors */ }
-
             setConfig(content);
             setSha(data.sha);
-            setStatus("Config loaded successfully! ✅", "success");
+            setGithubIssues(issues);
+            setStatus("Config & Issues loaded successfully! ✅", "success");
         } catch (err) {
             console.error(err);
-            setStatus("Failed to load config: " + err.message, "error");
+            setStatus("Failed to load data: " + err.message, "error");
             if (err.message.includes("401") || err.message.includes("403")) {
                 handleLogout();
             }
@@ -174,10 +170,40 @@ function Admin() {
     };
 
     // ===== REQUESTS =====
-    const approveRequest = (index) => {
+
+    // 1. Approve from Config (already added manually or previously approved)
+    const approveConfigRequest = (index) => {
         const newRequests = [...config.requests];
         newRequests[index] = { ...newRequests[index], status: 'approved' };
         setConfig({ ...config, requests: newRequests });
+    };
+
+    // 2. Approve from GitHub Issues
+    const approveIssueRequest = async (issue, index) => {
+        setStatus(`Approving request "${issue.title}"...`, "loading");
+
+        // Add to config
+        const newReq = {
+            title: issue.title.replace('Request: ', ''),
+            status: 'approved',
+            date: issue.created_at,
+            issueNumber: issue.number
+        };
+
+        // Update local state first (optimistic)
+        const updatedRequests = [...(config.requests || []), newReq];
+        setConfig({ ...config, requests: updatedRequests });
+
+        // Close issue on GitHub
+        try {
+            await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
+            // Remove from local issues list
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request approved & Issue closed! Don't forget to Save.", "success");
+        } catch (err) {
+            console.error(err);
+            setStatus("Failed to close GitHub issue: " + err.message, "error");
+        }
     };
 
     const revokeRequest = (index) => {
@@ -190,6 +216,18 @@ function Admin() {
         if (!window.confirm("Remove this request?")) return;
         const newRequests = config.requests.filter((_, i) => i !== index);
         setConfig({ ...config, requests: newRequests });
+    };
+
+    const deleteIssueRequest = async (issue) => {
+        if (!window.confirm(`Decline request "${issue.title}"? This will close the issue.`)) return;
+        setStatus(`Declining request...`, "loading");
+        try {
+            await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request declined & Issue closed.", "success");
+        } catch (err) {
+            setStatus("Failed to close issue: " + err.message, "error");
+        }
     };
 
     const [newRequestTitle, setNewRequestTitle] = useState("");
@@ -513,33 +551,64 @@ function Admin() {
 
                     {/* Pending */}
                     <h3 className="request-group-title request-group-title--pending">
-                        ⏳ Pending Approval ({pendingRequests.length})
+                        ⏳ Pending Approval ({pendingRequests.length + githubIssues.length})
                     </h3>
                     <div className="request-list">
-                        {pendingRequests.length === 0 ? (
+                        {pendingRequests.length === 0 && githubIssues.length === 0 ? (
                             <div className="request-empty">No pending requests</div>
                         ) : (
-                            pendingRequests.map((req) => {
-                                const origIdx = config.requests.indexOf(req);
-                                return (
-                                    <div key={origIdx} className="request-item request-item--pending">
+                            <>
+                                {/* Config Pending (Legacy/Manual) */}
+                                {pendingRequests.map((req) => {
+                                    const origIdx = config.requests.indexOf(req);
+                                    return (
+                                        <div key={`conf-${origIdx}`} className="request-item request-item--pending">
+                                            <div className="request-item__info">
+                                                <span className="request-item__title">{req.title}</span>
+                                                <span className="request-item__date">
+                                                    {req.date ? new Date(req.date).toLocaleDateString() : 'N/A'}
+                                                </span>
+                                                <span className="request-source-badge">Manual</span>
+                                            </div>
+                                            <div className="request-item__actions">
+                                                <button className="req-btn req-btn--approve" onClick={() => approveConfigRequest(origIdx)}>
+                                                    ✅ Approve
+                                                </button>
+                                                <button className="req-btn req-btn--decline" onClick={() => deleteRequest(origIdx)}>
+                                                    ❌ Decline
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* GitHub Issues Pending */}
+                                {githubIssues.map((issue) => (
+                                    <div key={`gh-${issue.id}`} className="request-item request-item--pending">
                                         <div className="request-item__info">
-                                            <span className="request-item__title">{req.title}</span>
+                                            <span className="request-item__title">
+                                                {issue.title.replace(/^Request:\s*/i, '')}
+                                            </span>
                                             <span className="request-item__date">
-                                                {req.date ? new Date(req.date).toLocaleDateString() : 'N/A'}
+                                                {new Date(issue.created_at).toLocaleDateString()}
+                                            </span>
+                                            <span className="request-source-badge request-source-badge--gh">
+                                                <a href={issue.html_url} target="_blank" rel="noreferrer">
+                                                    Issue #{issue.number}
+                                                </a>
                                             </span>
                                         </div>
                                         <div className="request-item__actions">
-                                            <button className="req-btn req-btn--approve" onClick={() => approveRequest(origIdx)}>
+                                            <button className="req-btn req-btn--approve" onClick={() => approveIssueRequest(issue)}>
                                                 ✅ Approve
                                             </button>
-                                            <button className="req-btn req-btn--decline" onClick={() => deleteRequest(origIdx)}>
+                                            <button className="req-btn req-btn--decline" onClick={() => deleteIssueRequest(issue)}>
                                                 ❌ Decline
                                             </button>
                                         </div>
                                     </div>
-                                );
-                            })
+                                ))}
+                            </>
                         )}
                     </div>
 
