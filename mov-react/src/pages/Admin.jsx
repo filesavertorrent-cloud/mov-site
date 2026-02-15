@@ -374,7 +374,7 @@ function Admin() {
                     </div>
                     <div className="stat-chip">
                         <span className="stat-chip__label">Requests</span>
-                        <span className="stat-chip__value">{(config.requests || []).length}</span>
+                        <span className="stat-chip__value">{(config.requests || []).length + githubIssues.length}</span>
                     </div>
                     <div className="stat-chip">
                         <span className="stat-chip__label">Timer</span>
