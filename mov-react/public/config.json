@@ -104,5 +104,9 @@
       "date": "2026-02-15T14:20:13Z"
     }
   ],
-  "closedIssueIds": []
+  "closedIssueIds": [
+    4,
+    3,
+    1
+  ]
 }
