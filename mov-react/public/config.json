@@ -83,6 +83,12 @@
       "status": "approved",
       "date": "2026-02-15T16:16:39Z",
       "issueNumber": 10
+    },
+    {
+      "title": "Tenir",
+      "status": "approved",
+      "date": "2026-02-15T16:24:54Z",
+      "issueNumber": 11
     }
   ],
   "closedIssueIds": [
@@ -94,6 +100,7 @@
     7,
     8,
     9,
-    10
+    10,
+    11
   ]
 }
