@@ -77,50 +77,15 @@
       ]
     }
   ],
-  "requests": [
-    {
-      "title": "RRR",
-      "status": "approved",
-      "date": "2026-02-15T13:03:59Z"
-    },
-    {
-      "title": "KGF",
-      "status": "approved",
-      "date": "2026-02-15T13:03:32Z"
-    },
-    {
-      "title": "DEVARA",
-      "status": "approved",
-      "date": "2026-02-15T13:11:55Z"
-    },
-    {
-      "title": "Vadachennai",
-      "status": "approved",
-      "date": "2026-02-15T13:15:33Z"
-    },
-    {
-      "title": "Nayakan",
-      "status": "approved",
-      "date": "2026-02-15T14:20:13Z"
-    },
-    {
-      "title": "Sonic 1",
-      "status": "approved",
-      "date": "2026-02-15T15:16:41Z",
-      "issueNumber": 5
-    },
-    {
-      "title": "Sonic 2",
-      "status": "approved",
-      "date": "2026-02-15T15:27:48Z",
-      "issueNumber": 6
-    }
-  ],
+  "requests": [],
   "closedIssueIds": [
     4,
     3,
     1,
     5,
-    6
+    6,
+    7,
+    8,
+    9
   ]
 }
