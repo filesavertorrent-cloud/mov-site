@@ -90,10 +90,8 @@ function Home() {
 
     const handleHeroRequest = useCallback((e) => {
         e.preventDefault();
-        if (!requestInput.trim()) return;
-        handleDirectRequest(requestInput.trim());
-        setRequestInput("");
-    }, [requestInput, showToast]);
+        setRequestModalOpen(true);
+    }, []);
 
     const handleModalRequest = useCallback((title) => {
         handleDirectRequest(title);
@@ -144,7 +142,7 @@ function Home() {
     return (
         <div className="home-page">
             <BackgroundGlows />
-            <Header onRequestClick={() => setRequestModalOpen(true)} />
+            <Header />
 
             {/* Hero Request Section */}
             <section className="hero-section fade-in-up">
@@ -155,9 +153,11 @@ function Home() {
                         <input
                             type="text"
                             value={requestInput}
-                            onChange={e => setRequestInput(e.target.value)}
+                            readOnly
+                            onClick={() => setRequestModalOpen(true)}
                             placeholder="Enter movie name..."
                             className="hero-input"
+                            style={{ cursor: 'pointer' }}
                         />
                         <button type="submit" className="hero-submit-btn">
                             Submit Request
