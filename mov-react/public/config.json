@@ -89,6 +89,12 @@
       "status": "approved",
       "date": "2026-02-15T13:03:32Z",
       "issueNumber": 7
+    },
+    {
+      "title": "DEVARA",
+      "status": "approved",
+      "date": "2026-02-15T13:11:55Z",
+      "issueNumber": 9
     }
   ],
   "closedIssueIds": [
@@ -99,6 +105,7 @@
     2,
     1,
     8,
-    7
+    7,
+    9
   ]
 }
