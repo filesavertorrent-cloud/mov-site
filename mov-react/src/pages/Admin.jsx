@@ -52,12 +52,20 @@ function Admin() {
 
             const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, "")))));
             if (!content.requests) content.requests = [];
+            if (!content.closedIssueIds) content.closedIssueIds = [];
 
             setConfig(content);
             setSha(data.sha);
 
-            // Filter issues by title since we can't rely on labels due to permissions
-            const validRequests = issues.filter(i => i.title.startsWith("Request:"));
+            // Filter issues: must start with "Request:" AND not be already handled
+            const handledIds = new Set([
+                ...content.requests.map(r => r.issueNumber),
+                ...content.closedIssueIds
+            ]);
+
+            const validRequests = issues.filter(i =>
+                i.title.startsWith("Request:") && !handledIds.has(i.number)
+            );
             setGithubIssues(validRequests);
 
             setStatus("Config & Issues loaded successfully! ✅", "success");
@@ -191,18 +199,28 @@ function Admin() {
         };
 
         // Update local state first (optimistic)
+        // Update local state first (optimistic)
+        // Add to processed IDs to hide it next time (soft close)
+        const updatedClosedIds = [...(config.closedIssueIds || []), issue.number];
         const updatedRequests = [...(config.requests || []), newReq];
-        setConfig({ ...config, requests: updatedRequests });
+
+        setConfig({
+            ...config,
+            requests: updatedRequests,
+            closedIssueIds: updatedClosedIds
+        });
 
         // Close issue on GitHub
         try {
             await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
             // Remove from local issues list
             setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
-            setStatus("Request approved & Issue closed! Don't forget to Save.", "success");
+            setStatus("Request approved! (Don't forget to Save)", "success");
         } catch (err) {
-            console.error(err);
-            setStatus("Failed to close GitHub issue: " + err.message, "error");
+            console.warn("Could not close GitHub issue (perm denied), but marked as handled locally.");
+            // Still remove from UI
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request approved locally! (GitHub issue remains open due to permissions)", "success");
         }
     };
 
@@ -219,14 +237,19 @@ function Admin() {
     };
 
     const deleteIssueRequest = async (issue) => {
-        if (!window.confirm(`Decline request "${issue.title}"? This will close the issue.`)) return;
+        if (!window.confirm(`Decline request "${issue.title}"? This will ignore the issue.`)) return;
         setStatus(`Declining request...`, "loading");
+
+        // Soft close locally
+        const updatedClosedIds = [...(config.closedIssueIds || []), issue.number];
+        setConfig({ ...config, closedIssueIds: updatedClosedIds });
+        setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+
         try {
             await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
-            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
             setStatus("Request declined & Issue closed.", "success");
         } catch (err) {
-            setStatus("Failed to close issue: " + err.message, "error");
+            setStatus("Request declined locally! (GitHub issue remains open due to permissions)", "success");
         }
     };
 
