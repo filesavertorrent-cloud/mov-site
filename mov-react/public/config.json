@@ -77,13 +77,28 @@
       ]
     }
   ],
-  "requests": [],
+  "requests": [
+    {
+      "title": "RRR",
+      "status": "approved",
+      "date": "2026-02-15T13:03:59Z",
+      "issueNumber": 8
+    },
+    {
+      "title": "KGF",
+      "status": "approved",
+      "date": "2026-02-15T13:03:32Z",
+      "issueNumber": 7
+    }
+  ],
   "closedIssueIds": [
     6,
     5,
     4,
     3,
     2,
-    1
+    1,
+    8,
+    7
   ]
 }
