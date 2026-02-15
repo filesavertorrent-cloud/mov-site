@@ -78,8 +78,9 @@ export const uploadImageToRepo = async (pat, owner, repo, file) => {
     });
 };
 
+
 export const fetchIssues = async (pat, owner, repo) => {
-    const response = await fetch(`${BASE_URL}/repos/${owner}/${repo}/issues?state=open&labels=movie-request&sort=created&direction=desc`, {
+    const response = await fetch(`${BASE_URL}/repos/${owner}/${repo}/issues?state=open&sort=created&direction=desc`, {
         headers: {
             'Authorization': `token ${pat}`,
             'Accept': 'application/vnd.github.v3+json'

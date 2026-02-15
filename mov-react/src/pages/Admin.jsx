@@ -55,7 +55,11 @@ function Admin() {
 
             setConfig(content);
             setSha(data.sha);
-            setGithubIssues(issues);
+
+            // Filter issues by title since we can't rely on labels due to permissions
+            const validRequests = issues.filter(i => i.title.startsWith("Request:"));
+            setGithubIssues(validRequests);
+
             setStatus("Config & Issues loaded successfully! ✅", "success");
         } catch (err) {
             console.error(err);
