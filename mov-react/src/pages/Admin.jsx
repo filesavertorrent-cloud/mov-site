@@ -359,6 +359,8 @@ function Admin() {
         { label: '3 hours', mins: 180 },
         { label: '4 hours', mins: 240 },
         { label: '5 hours', mins: 300 },
+        { label: '12 hours', mins: 720 },
+        { label: '24 hours', mins: 1440 },
     ];
 
     const expiryDate = new Date(config.expiryTime);
@@ -412,6 +414,15 @@ function Admin() {
                     <div className="admin-section__title">⏱️ Timer Duration</div>
                     <p className="admin-section__desc">Set how long download links stay active from now.</p>
                     <div className="timer-grid">
+                        <button
+                            className={`timer-btn ${selectedTimer === null && !isExpired ? 'timer-btn--active' : ''}`}
+                            onClick={() => {
+                                setSelectedTimer(null);
+                                setStatus("Timer continuing... (Existing expiry kept)", "success");
+                            }}
+                        >
+                            ➡️ Continue
+                        </button>
                         {timerPresets.map(t => (
                             <button
                                 key={t.mins}
