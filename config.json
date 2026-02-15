@@ -77,20 +77,7 @@
       ]
     }
   ],
-  "requests": [
-    {
-      "title": "hit",
-      "status": "approved",
-      "date": "2026-02-15T16:16:39Z",
-      "issueNumber": 10
-    },
-    {
-      "title": "Tenir",
-      "status": "approved",
-      "date": "2026-02-15T16:24:54Z",
-      "issueNumber": 11
-    }
-  ],
+  "requests": [],
   "closedIssueIds": [
     4,
     3,
