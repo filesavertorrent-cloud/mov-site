@@ -108,12 +108,19 @@
       "status": "approved",
       "date": "2026-02-15T15:16:41Z",
       "issueNumber": 5
+    },
+    {
+      "title": "Sonic 2",
+      "status": "approved",
+      "date": "2026-02-15T15:27:48Z",
+      "issueNumber": 6
     }
   ],
   "closedIssueIds": [
     4,
     3,
     1,
-    5
+    5,
+    6
   ]
 }
