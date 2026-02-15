@@ -53,7 +53,7 @@
     },
     {
       "title": "Thalaivar Thambi Thalaimaiyil",
-      "poster": "https://raw.githubusercontent.com/filesavertorrent-cloud/mov-site/main/images/poster_1771100716875_G95xsMbMAAVPw1.jpg",
+      "poster": "https://raw.githubusercontent.com/filesavertorrent-cloud/mov-site/main/images/poster_1771004744139_HAhuxSa4AA0ALM.jpg",
       "rating": "8.1",
       "year": "2026",
       "duration": "1h 53min",
@@ -273,5 +273,15 @@
       "status": "approved",
       "date": "2026-02-14T15:18:51.111Z"
     }
+  ],
+  "closedIssueIds": [
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    8,
+    7
   ]
 }
