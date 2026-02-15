@@ -144,7 +144,7 @@ function Home() {
     return (
         <div className="home-page">
             <BackgroundGlows />
-            <Header />
+            <Header onRequestClick={() => setRequestModalOpen(true)} />
 
             {/* Hero Request Section */}
             <section className="hero-section fade-in-up">

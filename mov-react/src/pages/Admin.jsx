@@ -228,12 +228,14 @@ function Admin() {
         const newRequests = [...config.requests];
         newRequests[index] = { ...newRequests[index], status: 'pending' };
         setConfig({ ...config, requests: newRequests });
+        setStatus("Request revoked! (Don't forget to Save)", "success");
     };
 
     const deleteRequest = (index) => {
         if (!window.confirm("Remove this request?")) return;
         const newRequests = config.requests.filter((_, i) => i !== index);
         setConfig({ ...config, requests: newRequests });
+        setStatus("Request removed! (Don't forget to Save)", "success");
     };
 
     const deleteIssueRequest = async (issue) => {
