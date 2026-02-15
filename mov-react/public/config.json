@@ -101,6 +101,12 @@
       "status": "approved",
       "date": "2026-02-15T13:15:33Z",
       "issueNumber": 10
+    },
+    {
+      "title": "Nayakan",
+      "status": "approved",
+      "date": "2026-02-15T14:20:13Z",
+      "issueNumber": 12
     }
   ],
   "closedIssueIds": [
@@ -113,6 +119,7 @@
     8,
     7,
     9,
-    10
+    10,
+    12
   ]
 }
