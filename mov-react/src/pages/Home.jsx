@@ -7,7 +7,8 @@ import RequestCloud from '../components/RequestCloud';
 import RequestModal from '../components/RequestModal';
 import MoviePoster from '../components/MoviePoster';
 import DownloadSection from '../components/DownloadSection';
-import { fetchConfig } from '../services/configService';
+import { fetchConfig, GITHUB_OWNER, GITHUB_REPO, HARDCODED_PAT } from '../services/configService';
+import { createIssue } from '../services/githubService';
 import '../styles/index.css';
 
 function parseConfig(config) {
@@ -41,18 +42,6 @@ function Home() {
     const [requestModalOpen, setRequestModalOpen] = useState(false);
     const [requestInput, setRequestInput] = useState("");
 
-    // Helper: get pending requests from localStorage
-    const getLocalRequests = () => {
-        try {
-            return JSON.parse(localStorage.getItem('mv_pending_requests') || '[]');
-        } catch { return []; }
-    };
-
-    // Helper: save pending requests to localStorage
-    const saveLocalRequests = (reqs) => {
-        localStorage.setItem('mv_pending_requests', JSON.stringify(reqs));
-    };
-
     useEffect(() => {
         const interval = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(interval);
@@ -62,19 +51,11 @@ function Home() {
         const loadData = async () => {
             try {
                 const data = await fetchConfig();
-                // Merge: GitHub config requests (approved ones) + localStorage pending requests
-                const configRequests = data.requests || [];
-                const localPending = getLocalRequests();
-                // Combine: config requests first, then local pending (avoiding duplicates)
-                const configTitles = new Set(configRequests.map(r => r.title.toLowerCase()));
-                const uniqueLocal = localPending.filter(r => !configTitles.has(r.title.toLowerCase()));
-                setRequests([...configRequests, ...uniqueLocal]);
+                setRequests(data.requests || []);
                 setMovies(parseConfig(data));
                 setLoading(false);
             } catch (err) {
                 console.error("Failed to load config:", err);
-                // Still load local requests even if config fails
-                setRequests(getLocalRequests());
                 setError("Failed to load movie data.");
                 setLoading(false);
             }
@@ -89,29 +70,34 @@ function Home() {
         return () => clearTimeout(timer);
     }, []);
 
+    const handleDirectRequest = async (title) => {
+        if (!title.trim()) return;
+        showToast("Submitting request... ⏳", 5000);
+        try {
+            await createIssue(
+                HARDCODED_PAT,
+                GITHUB_OWNER,
+                GITHUB_REPO,
+                `Request: ${title}`,
+                `I would like to request the movie: **${title}**.\n\n_Requested via MovieVault Direct_`
+            );
+            showToast("Request submitted successfully! ✅ Admin will review it.");
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to submit request. Please try again later. ❌");
+        }
+    };
+
     const handleHeroRequest = useCallback((e) => {
         e.preventDefault();
         if (!requestInput.trim()) return;
-        const newRequest = { title: requestInput.trim(), status: 'pending', date: new Date().toISOString() };
-        setRequests(prev => {
-            const updated = [newRequest, ...prev];
-            // Save all pending to localStorage
-            saveLocalRequests(updated.filter(r => r.status === 'pending'));
-            return updated;
-        });
+        handleDirectRequest(requestInput.trim());
         setRequestInput("");
-        showToast("Movie request submitted! 🎬 Awaiting admin approval.");
     }, [requestInput, showToast]);
 
     const handleModalRequest = useCallback((title) => {
-        const newRequest = { title, status: 'pending', date: new Date().toISOString() };
-        setRequests(prev => {
-            const updated = [newRequest, ...prev];
-            saveLocalRequests(updated.filter(r => r.status === 'pending'));
-            return updated;
-        });
+        handleDirectRequest(title);
         setRequestModalOpen(false);
-        showToast("Movie request submitted! 🎬 Awaiting admin approval.");
     }, [showToast]);
 
     const handleDownload = useCallback((quality) => {
@@ -131,7 +117,7 @@ function Home() {
                 window.open(quality.url, "_blank");
                 setTimeout(() => showToast(`${quality.label} download started! ✅`, 3500), 2000);
             }
-        }, 1000);
+        }, 1000); // Fixed interval duration
     }, [showToast]);
 
     if (loading) {

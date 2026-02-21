@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getRepoContent, updateRepoContent, uploadImageToRepo } from '../services/githubService';
-import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH } from '../services/configService';
+import { getRepoContent, updateRepoContent, uploadImageToRepo, fetchIssues, closeIssue } from '../services/githubService';
+import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH, HARDCODED_PAT } from '../services/configService';
 import { fetchMovieByTitle } from '../services/omdbService';
 import '../styles/admin.css';
 
 const ADMIN_PASSWORD = "Abd123*";
-// Split to bypass GitHub secret scanning
-const HARDCODED_PAT_PART1 = "github_pat_11B3TCF3A0E9lMHdcX5JkH_";
-const HARDCODED_PAT_PART2 = "WxfO583LiE6a9NPVx5OSloqDpbwIBD2U6JoZiSF7wttMXXGY3F3acRbDZUa";
-const HARDCODED_PAT = HARDCODED_PAT_PART1 + HARDCODED_PAT_PART2;
 
 function Admin() {
     const [loggedIn, setLoggedIn] = useState(false);
@@ -19,6 +15,7 @@ function Admin() {
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState("");
     const [statusType, setStatusType] = useState("");
+    const [githubIssues, setGithubIssues] = useState([]);
 
     // Login
     const [loginPass, setLoginPass] = useState("");
@@ -50,28 +47,35 @@ function Admin() {
 
     const loadConfig = async () => {
         setLoading(true);
-        setStatus("Loading config from GitHub...", "loading");
+        setStatus("Loading config & issues from GitHub...", "loading");
         try {
-            const data = await getRepoContent(pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH);
+            const [data, issues] = await Promise.all([
+                getRepoContent(pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH),
+                fetchIssues(pat, GITHUB_OWNER, GITHUB_REPO)
+            ]);
+
             const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, "")))));
             if (!content.requests) content.requests = [];
-
-            // Merge pending requests from localStorage (submitted from Home page)
-            try {
-                const localPending = JSON.parse(localStorage.getItem('mv_pending_requests') || '[]');
-                if (localPending.length > 0) {
-                    const existingTitles = new Set(content.requests.map(r => r.title.toLowerCase()));
-                    const newRequests = localPending.filter(r => !existingTitles.has(r.title.toLowerCase()));
-                    content.requests = [...content.requests, ...newRequests];
-                }
-            } catch (e) { /* ignore localStorage errors */ }
+            if (!content.closedIssueIds) content.closedIssueIds = [];
 
             setConfig(content);
             setSha(data.sha);
-            setStatus("Config loaded successfully! ✅", "success");
+
+            // Filter issues: must start with "Request:" AND not be already handled
+            const handledIds = new Set([
+                ...content.requests.map(r => r.issueNumber),
+                ...content.closedIssueIds
+            ]);
+
+            const validRequests = issues.filter(i =>
+                i.title.startsWith("Request:") && !handledIds.has(i.number)
+            );
+            setGithubIssues(validRequests);
+
+            setStatus("Config & Issues loaded successfully! ✅", "success");
         } catch (err) {
             console.error(err);
-            setStatus("Failed to load config: " + err.message, "error");
+            setStatus("Failed to load data: " + err.message, "error");
             if (err.message.includes("401") || err.message.includes("403")) {
                 handleLogout();
             }
@@ -210,10 +214,50 @@ function Admin() {
     };
 
     // ===== REQUESTS =====
-    const approveRequest = (index) => {
+
+    // 1. Approve from Config (already added manually or previously approved)
+    const approveConfigRequest = (index) => {
         const newRequests = [...config.requests];
         newRequests[index] = { ...newRequests[index], status: 'approved' };
         setConfig({ ...config, requests: newRequests });
+    };
+
+    // 2. Approve from GitHub Issues
+    const approveIssueRequest = async (issue, index) => {
+        setStatus(`Approving request "${issue.title}"...`, "loading");
+
+        // Add to config
+        const newReq = {
+            title: issue.title.replace('Request: ', ''),
+            status: 'approved',
+            date: issue.created_at,
+            issueNumber: issue.number
+        };
+
+        // Update local state first (optimistic)
+        // Update local state first (optimistic)
+        // Add to processed IDs to hide it next time (soft close)
+        const updatedClosedIds = [...(config.closedIssueIds || []), issue.number];
+        const updatedRequests = [...(config.requests || []), newReq];
+
+        setConfig({
+            ...config,
+            requests: updatedRequests,
+            closedIssueIds: updatedClosedIds
+        });
+
+        // Close issue on GitHub
+        try {
+            await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
+            // Remove from local issues list
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request approved! (Don't forget to Save)", "success");
+        } catch (err) {
+            console.warn("Could not close GitHub issue (perm denied), but marked as handled locally.");
+            // Still remove from UI
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request approved locally! (GitHub issue remains open due to permissions)", "success");
+        }
     };
 
     const revokeRequest = (index) => {
@@ -226,6 +270,23 @@ function Admin() {
         if (!window.confirm("Remove this request?")) return;
         const newRequests = config.requests.filter((_, i) => i !== index);
         setConfig({ ...config, requests: newRequests });
+    };
+
+    const deleteIssueRequest = async (issue) => {
+        if (!window.confirm(`Decline request "${issue.title}"? This will ignore the issue.`)) return;
+        setStatus(`Declining request...`, "loading");
+
+        // Soft close locally
+        const updatedClosedIds = [...(config.closedIssueIds || []), issue.number];
+        setConfig({ ...config, closedIssueIds: updatedClosedIds });
+        setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+
+        try {
+            await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
+            setStatus("Request declined & Issue closed.", "success");
+        } catch (err) {
+            setStatus("Request declined locally! (GitHub issue remains open due to permissions)", "success");
+        }
     };
 
     const [newRequestTitle, setNewRequestTitle] = useState("");
@@ -365,6 +426,8 @@ function Admin() {
         { label: '3 hours', mins: 180 },
         { label: '4 hours', mins: 240 },
         { label: '5 hours', mins: 300 },
+        { label: '12 hours', mins: 720 },
+        { label: '24 hours', mins: 1440 },
     ];
 
     const expiryDate = new Date(config.expiryTime);
@@ -403,7 +466,7 @@ function Admin() {
                     </div>
                     <div className="stat-chip">
                         <span className="stat-chip__label">Requests</span>
-                        <span className="stat-chip__value">{(config.requests || []).length}</span>
+                        <span className="stat-chip__value">{(config.requests || []).length + githubIssues.length}</span>
                     </div>
                     <div className="stat-chip">
                         <span className="stat-chip__label">Timer</span>
@@ -418,6 +481,15 @@ function Admin() {
                     <div className="admin-section__title">⏱️ Timer Duration</div>
                     <p className="admin-section__desc">Set how long download links stay active from now.</p>
                     <div className="timer-grid">
+                        <button
+                            className={`timer-btn ${selectedTimer === null && !isExpired ? 'timer-btn--active' : ''}`}
+                            onClick={() => {
+                                setSelectedTimer(null);
+                                setStatus("Timer continuing... (Existing expiry kept)", "success");
+                            }}
+                        >
+                            ➡️ Continue
+                        </button>
                         {timerPresets.map(t => (
                             <button
                                 key={t.mins}
@@ -590,33 +662,64 @@ function Admin() {
 
                     {/* Pending */}
                     <h3 className="request-group-title request-group-title--pending">
-                        ⏳ Pending Approval ({pendingRequests.length})
+                        ⏳ Pending Approval ({pendingRequests.length + githubIssues.length})
                     </h3>
                     <div className="request-list">
-                        {pendingRequests.length === 0 ? (
+                        {pendingRequests.length === 0 && githubIssues.length === 0 ? (
                             <div className="request-empty">No pending requests</div>
                         ) : (
-                            pendingRequests.map((req) => {
-                                const origIdx = config.requests.indexOf(req);
-                                return (
-                                    <div key={origIdx} className="request-item request-item--pending">
+                            <>
+                                {/* Config Pending (Legacy/Manual) */}
+                                {pendingRequests.map((req) => {
+                                    const origIdx = config.requests.indexOf(req);
+                                    return (
+                                        <div key={`conf-${origIdx}`} className="request-item request-item--pending">
+                                            <div className="request-item__info">
+                                                <span className="request-item__title">{req.title}</span>
+                                                <span className="request-item__date">
+                                                    {req.date ? new Date(req.date).toLocaleDateString() : 'N/A'}
+                                                </span>
+                                                <span className="request-source-badge">Manual</span>
+                                            </div>
+                                            <div className="request-item__actions">
+                                                <button className="req-btn req-btn--approve" onClick={() => approveConfigRequest(origIdx)}>
+                                                    ✅ Approve
+                                                </button>
+                                                <button className="req-btn req-btn--decline" onClick={() => deleteRequest(origIdx)}>
+                                                    ❌ Decline
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* GitHub Issues Pending */}
+                                {githubIssues.map((issue) => (
+                                    <div key={`gh-${issue.id}`} className="request-item request-item--pending">
                                         <div className="request-item__info">
-                                            <span className="request-item__title">{req.title}</span>
+                                            <span className="request-item__title">
+                                                {issue.title.replace(/^Request:\s*/i, '')}
+                                            </span>
                                             <span className="request-item__date">
-                                                {req.date ? new Date(req.date).toLocaleDateString() : 'N/A'}
+                                                {new Date(issue.created_at).toLocaleDateString()}
+                                            </span>
+                                            <span className="request-source-badge request-source-badge--gh">
+                                                <a href={issue.html_url} target="_blank" rel="noreferrer">
+                                                    Issue #{issue.number}
+                                                </a>
                                             </span>
                                         </div>
                                         <div className="request-item__actions">
-                                            <button className="req-btn req-btn--approve" onClick={() => approveRequest(origIdx)}>
+                                            <button className="req-btn req-btn--approve" onClick={() => approveIssueRequest(issue)}>
                                                 ✅ Approve
                                             </button>
-                                            <button className="req-btn req-btn--decline" onClick={() => deleteRequest(origIdx)}>
+                                            <button className="req-btn req-btn--decline" onClick={() => deleteIssueRequest(issue)}>
                                                 ❌ Decline
                                             </button>
                                         </div>
                                     </div>
-                                );
-                            })
+                                ))}
+                            </>
                         )}
                     </div>
 
