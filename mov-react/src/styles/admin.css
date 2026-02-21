@@ -550,6 +550,56 @@
     color: #ff6b81;
 }
 
+/* ===== IMDb Fetch Button ===== */
+.title-fetch-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.title-fetch-row input {
+    flex: 1;
+}
+
+.btn-fetch-imdb {
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #f5c518, #e0a800);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.btn-fetch-imdb:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 197, 24, 0.35);
+}
+
+.btn-fetch-imdb:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.btn-fetch-imdb:disabled,
+.btn-fetch-imdb--loading {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    animation: imdbPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes imdbPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
 /* ===== Fields ===== */
 .field-row {
     display: flex;

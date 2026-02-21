@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getRepoContent, updateRepoContent, uploadImageToRepo } from '../services/githubService';
 import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH } from '../services/configService';
+import { fetchMovieByTitle } from '../services/omdbService';
 import '../styles/admin.css';
 
 const ADMIN_PASSWORD = "Abd123*";
@@ -26,6 +27,9 @@ function Admin() {
 
     // Timer
     const [selectedTimer, setSelectedTimer] = useState(null);
+
+    // IMDb fetch loading state per movie index
+    const [fetchingImdb, setFetchingImdb] = useState({});
 
     const fileInputRefs = useRef({});
 
@@ -128,12 +132,12 @@ function Admin() {
 
     const addNewMovie = () => {
         const newMovie = {
-            title: "New Movie",
-            poster: "https://via.placeholder.com/400x600/1a1a2e/e94560?text=New+Movie",
-            rating: "0.0",
-            year: new Date().getFullYear().toString(),
-            duration: "0h 00m",
-            genre: "Genre",
+            title: "",
+            poster: "",
+            rating: "",
+            year: "",
+            duration: "",
+            genre: "",
             qualities: [
                 { label: "480p", size: "0 GB", url: "" },
                 { label: "720p", size: "0 GB", url: "" },
@@ -141,6 +145,38 @@ function Admin() {
             ]
         };
         setConfig({ ...config, movies: [newMovie, ...config.movies] });
+    };
+
+    // ===== IMDb FETCH =====
+    const fetchImdbData = async (index) => {
+        const movie = config.movies[index];
+        if (!movie.title || !movie.title.trim() || movie.title === 'New Movie') {
+            setStatus('Please enter a movie title first', 'error');
+            return;
+        }
+        setFetchingImdb(prev => ({ ...prev, [index]: true }));
+        setStatus(`🔍 Looking up "${movie.title}" on IMDb...`, 'loading');
+        try {
+            const data = await fetchMovieByTitle(movie.title);
+            if (data) {
+                const newMovies = [...config.movies];
+                newMovies[index] = {
+                    ...newMovies[index],
+                    rating: data.rating || newMovies[index].rating,
+                    year: data.year || newMovies[index].year,
+                    duration: data.duration || newMovies[index].duration,
+                    genre: data.genre || newMovies[index].genre,
+                };
+                setConfig({ ...config, movies: newMovies });
+                setStatus(`✅ Found "${movie.title}" — Rating: ${data.rating}, Year: ${data.year}`, 'success');
+            } else {
+                setStatus(`❌ "${movie.title}" not found on IMDb. Fill details manually.`, 'error');
+            }
+        } catch (err) {
+            setStatus('IMDb fetch failed: ' + err.message, 'error');
+        } finally {
+            setFetchingImdb(prev => ({ ...prev, [index]: false }));
+        }
     };
 
     const deleteMovie = (index) => {
@@ -204,8 +240,39 @@ function Admin() {
     const saveAndPush = async () => {
         if (!config || !sha) return;
         setLoading(true);
-        setStatus("Pushing changes to GitHub...", "loading");
+        setStatus("🔍 Auto-fetching IMDb data for new movies...", "loading");
         try {
+            // Auto-fetch IMDb data for movies with empty/default metadata
+            const updatedMovies = [...config.movies];
+            let fetchCount = 0;
+            for (let i = 0; i < updatedMovies.length; i++) {
+                const m = updatedMovies[i];
+                const needsFetch = m.title && m.title.trim() &&
+                    (!m.rating || m.rating === '0.0' || !m.year || !m.duration || m.duration === '0h 00m' || !m.genre || m.genre === 'Genre');
+                if (needsFetch) {
+                    try {
+                        const data = await fetchMovieByTitle(m.title);
+                        if (data) {
+                            updatedMovies[i] = {
+                                ...updatedMovies[i],
+                                rating: data.rating || updatedMovies[i].rating,
+                                year: data.year || updatedMovies[i].year,
+                                duration: data.duration || updatedMovies[i].duration,
+                                genre: data.genre || updatedMovies[i].genre,
+                            };
+                            fetchCount++;
+                        }
+                    } catch (e) { /* skip if individual fetch fails */ }
+                }
+            }
+            const configToSave = { ...config, movies: updatedMovies };
+            setConfig(configToSave);
+            if (fetchCount > 0) {
+                setStatus(`Fetched IMDb data for ${fetchCount} movie(s). Pushing to GitHub...`, 'loading');
+            } else {
+                setStatus("Pushing changes to GitHub...", "loading");
+            }
+
             // Re-fetch SHA to avoid conflicts
             let currentSha = sha;
             try {
@@ -215,13 +282,13 @@ function Admin() {
 
             const res = await updateRepoContent(
                 pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH,
-                config, currentSha,
+                configToSave, currentSha,
                 `Update config via Admin Panel (${new Date().toLocaleString()})`
             );
             setSha(res.content.sha);
             // Optimistic Cache: Specific for Admin user to see changes immediately
             localStorage.setItem('mv_cache_config', JSON.stringify({
-                data: config,
+                data: configToSave,
                 timestamp: Date.now()
             }));
             // Clear localStorage pending requests since they're now in GitHub
@@ -402,12 +469,22 @@ function Admin() {
                                     <div className="movie-edit-card__fields">
                                         <div className="field-row">
                                             <label>Title</label>
-                                            <input
-                                                type="text"
-                                                value={movie.title}
-                                                onChange={e => handleMovieChange(i, 'title', e.target.value)}
-                                                placeholder="Movie Title"
-                                            />
+                                            <div className="title-fetch-row">
+                                                <input
+                                                    type="text"
+                                                    value={movie.title}
+                                                    onChange={e => handleMovieChange(i, 'title', e.target.value)}
+                                                    placeholder="Enter movie title..."
+                                                />
+                                                <button
+                                                    className={`btn-fetch-imdb ${fetchingImdb[i] ? 'btn-fetch-imdb--loading' : ''}`}
+                                                    onClick={() => fetchImdbData(i)}
+                                                    disabled={fetchingImdb[i]}
+                                                    title="Fetch rating, year, duration & genre from IMDb"
+                                                >
+                                                    {fetchingImdb[i] ? '⏳' : '🔍 IMDb'}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="field-row">
                                             <label>Poster URL</label>
