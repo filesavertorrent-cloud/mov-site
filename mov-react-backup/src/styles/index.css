@@ -799,36 +799,6 @@ body {
     transition: opacity 0.3s;
 }
 
-/* ===== Modal Rules ===== */
-.modal-rules {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 24px;
-}
-
-.modal-rules p {
-    margin-bottom: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 500;
-}
-
-.rules-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.rules-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.9);
-}
-
 /* ===== Requests Title ===== */
 .requests-title {
     text-align: center;

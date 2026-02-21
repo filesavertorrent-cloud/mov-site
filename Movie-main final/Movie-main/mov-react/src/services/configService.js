@@ -1,5 +1,5 @@
-const GITHUB_OWNER = "filesavertorrent-cloud";
-const GITHUB_REPO = "mov-site";
+const GITHUB_OWNER = "connectwithmreditor-tech";
+const GITHUB_REPO = "Movie";
 const GITHUB_BRANCH = "main";
 const CONFIG_PATH = "mov-react/public/config.json";
 
@@ -49,8 +49,8 @@ export const fetchConfig = async () => {
     }
 };
 
-const HARDCODED_PAT_PART1 = "github_pat_11B6NC3JY0UdhhSq4SyLtA_";
-const HARDCODED_PAT_PART2 = "mPH3fIo0Z5733XAXYuAwWr6D87VYoX7WjbNjp3FAVEvRID3P4R7dPfqO7fE";
+const HARDCODED_PAT_PART1 = "github_pat_11B3TCF3A0E9lMHdcX5JkH_";
+const HARDCODED_PAT_PART2 = "WxfO583LiE6a9NPVx5OSloqDpbwIBD2U6JoZiSF7wttMXXGY3F3acRbDZUa";
 const HARDCODED_PAT = HARDCODED_PAT_PART1 + HARDCODED_PAT_PART2;
 
 export { GITHUB_OWNER, GITHUB_REPO, GITHUB_BRANCH, CONFIG_PATH, HARDCODED_PAT };

@@ -90,8 +90,10 @@ function Home() {
 
     const handleHeroRequest = useCallback((e) => {
         e.preventDefault();
-        setRequestModalOpen(true);
-    }, []);
+        if (!requestInput.trim()) return;
+        handleDirectRequest(requestInput.trim());
+        setRequestInput("");
+    }, [requestInput, showToast]);
 
     const handleModalRequest = useCallback((title) => {
         handleDirectRequest(title);
@@ -153,11 +155,9 @@ function Home() {
                         <input
                             type="text"
                             value={requestInput}
-                            readOnly
-                            onClick={() => setRequestModalOpen(true)}
+                            onChange={e => setRequestInput(e.target.value)}
                             placeholder="Enter movie name..."
                             className="hero-input"
-                            style={{ cursor: 'pointer' }}
                         />
                         <button type="submit" className="hero-submit-btn">
                             Submit Request
