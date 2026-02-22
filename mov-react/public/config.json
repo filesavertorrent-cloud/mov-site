@@ -220,6 +220,12 @@
       "status": "approved",
       "date": "2026-02-22T11:17:41Z",
       "issueNumber": 22
+    },
+    {
+      "title": "thai kizhavi",
+      "status": "approved",
+      "date": "2026-02-22T16:20:31Z",
+      "issueNumber": 27
     }
   ],
   "closedIssueIds": [
@@ -247,6 +253,7 @@
     26,
     25,
     24,
-    23
+    23,
+    27
   ]
 }
