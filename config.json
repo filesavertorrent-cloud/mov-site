@@ -2,6 +2,31 @@
   "expiryTime": "2026-02-23T07:13:04.772Z",
   "movies": [
     {
+      "title": "Lucky the Superstar",
+      "poster": "https://www.pixelbb.com/images/2026/02/19/tNTYyMmIy.jpg",
+      "rating": "6.y",
+      "year": "2026",
+      "duration": "2h 2m",
+      "genre": "Comedy/Drama",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "https://drive.google.com/file/d/11NGWoVTXhTjx8tp5QFCD3uRXkO9lAvUp/view?usp=sharing"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "https://drive.google.com/file/d/14uL0ruXVQfHrkCkyQBZy37OmurRiBTdb/view?usp=sharing"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "https://drive.google.com/file/d/18qSCdX8biOKpCR4KS5HjUqx1V1VoSdM2/view?usp=sharing"
+        }
+      ]
+    },
+    {
       "title": "Lokah Chapter One: Chandra",
       "poster": "https://www.cinejosh.com/newsimg/newsmainimg/lokah-chapter-1_b_3110251257.jpg",
       "rating": "7.7",
