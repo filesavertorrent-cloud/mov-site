@@ -2,6 +2,31 @@
   "expiryTime": "2026-02-24T15:29:44.211Z",
   "movies": [
     {
+      "title": "Vallavan Tamil",
+      "poster": "https://www.pixelbb.com/images/2026/02/03/image1cd4683700ced8e2.md.png",
+      "rating": "4.9",
+      "year": "2006",
+      "duration": "1h 58m",
+      "genre": "Romance/Thriller",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": "https://drive.google.com/file/d/1klAZh3U16VzBZCq58DO3tz6RwoAJFkP5/view?usp=sharing"
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": "https://drive.google.com/file/d/1jkPzHqiNLkFjBQLUy4Rs2ZRt-FPS_xdX/view?usp=sharing"
+        },
+        {
+          "label": "1080p",
+          "size": "4 GB",
+          "url": "https://drive.google.com/file/d/13wbdXPB4L5qWeNOE7W7JiuMHQhGrBb8O/view?usp=sharing"
+        }
+      ]
+    },
+    {
       "title": "Ghilli  Tamil ",
       "poster": "https://m.media-amazon.com/images/S/pv-target-images/6e61c2db2e28ac4a96e7dbdf2e1367640a515c5f532450abe45fecd236e5433b.jpg",
       "rating": "8.2",
