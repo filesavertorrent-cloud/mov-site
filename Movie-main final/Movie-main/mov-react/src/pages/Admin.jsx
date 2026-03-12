@@ -1,0 +1,698 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { getRepoContent, updateRepoContent, uploadImageToRepo, fetchIssues, closeIssue } from '../services/githubService';
+import { GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH, HARDCODED_PAT } from '../services/configService';
+import '../styles/admin.css';
+
+const ADMIN_PASSWORD = "Abd123*";
+
+function Admin() {
+    const [loggedIn, setLoggedIn] = useState(false);
+    const [pat, setPat] = useState("");
+    const [config, setConfig] = useState(null);
+    const [sha, setSha] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [statusMsg, setStatusMsg] = useState("");
+    const [statusType, setStatusType] = useState("");
+    const [githubIssues, setGithubIssues] = useState([]);
+
+    // Login
+    const [loginPass, setLoginPass] = useState("");
+    const [loginPat, setLoginPat] = useState(HARDCODED_PAT);
+    const [loginError, setLoginError] = useState("");
+
+    // Timer
+    const [selectedTimer, setSelectedTimer] = useState(null);
+
+    const fileInputRefs = useRef({});
+
+    // Session restore
+    useEffect(() => {
+        const session = localStorage.getItem("mv_admin_session");
+        const storedPat = localStorage.getItem("mv_admin_pat");
+        if (session === "true" && storedPat) {
+            setPat(storedPat);
+            setLoggedIn(true);
+        }
+    }, []);
+
+    // Load config when logged in
+    useEffect(() => {
+        if (loggedIn && pat) loadConfig();
+    }, [loggedIn, pat]);
+
+    const loadConfig = async () => {
+        setLoading(true);
+        setStatus("Loading config & issues from GitHub...", "loading");
+        try {
+            const [data, issues] = await Promise.all([
+                getRepoContent(pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH),
+                fetchIssues(pat, GITHUB_OWNER, GITHUB_REPO)
+            ]);
+
+            const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, "")))));
+            if (!content.requests) content.requests = [];
+            if (!content.closedIssueIds) content.closedIssueIds = [];
+
+            setConfig(content);
+            setSha(data.sha);
+
+            // Filter issues: must start with "Request:" AND not be already handled
+            const handledIds = new Set([
+                ...content.requests.map(r => r.issueNumber),
+                ...content.closedIssueIds
+            ]);
+
+            const validRequests = issues.filter(i =>
+                i.title.startsWith("Request:") && !handledIds.has(i.number)
+            );
+            setGithubIssues(validRequests);
+
+            setStatus("Config & Issues loaded successfully! ✅", "success");
+        } catch (err) {
+            console.error(err);
+            setStatus("Failed to load data: " + err.message, "error");
+            if (err.message.includes("401") || err.message.includes("403")) {
+                handleLogout();
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const setStatus = (msg, type) => {
+        setStatusMsg(msg);
+        setStatusType(type);
+        if (type === 'success') {
+            setTimeout(() => { setStatusMsg(""); setStatusType(""); }, 4000);
+        }
+    };
+
+    // ===== LOGIN =====
+    const handleLogin = (e) => {
+        e.preventDefault();
+        setLoginError("");
+        if (loginPass !== ADMIN_PASSWORD) {
+            setLoginError("Incorrect password");
+            return;
+        }
+        if (!loginPat.trim()) {
+            setLoginError("Please enter your GitHub Personal Access Token");
+            return;
+        }
+        localStorage.setItem("mv_admin_session", "true");
+        localStorage.setItem("mv_admin_pat", loginPat.trim());
+        setPat(loginPat.trim());
+        setLoggedIn(true);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("mv_admin_session");
+        localStorage.removeItem("mv_admin_pat");
+        setLoggedIn(false);
+        setPat("");
+        setConfig(null);
+        setSha(null);
+    };
+
+    // ===== MOVIE EDITING =====
+    const handleMovieChange = (index, field, value) => {
+        const newMovies = [...config.movies];
+        newMovies[index] = { ...newMovies[index], [field]: value };
+        setConfig({ ...config, movies: newMovies });
+    };
+
+    const handleQualityChange = (movieIdx, qualIdx, field, value) => {
+        const newMovies = [...config.movies];
+        const newQualities = [...newMovies[movieIdx].qualities];
+        newQualities[qualIdx] = { ...newQualities[qualIdx], [field]: value };
+        newMovies[movieIdx] = { ...newMovies[movieIdx], qualities: newQualities };
+        setConfig({ ...config, movies: newMovies });
+    };
+
+    const addNewMovie = () => {
+        const newMovie = {
+            title: "New Movie",
+            poster: "https://via.placeholder.com/400x600/1a1a2e/e94560?text=New+Movie",
+            rating: "0.0",
+            year: new Date().getFullYear().toString(),
+            duration: "0h 00m",
+            genre: "Genre",
+            qualities: [
+                { label: "480p", size: "0 GB", url: "" },
+                { label: "720p", size: "0 GB", url: "" },
+                { label: "1080p", size: "0 GB", url: "" }
+            ]
+        };
+        setConfig({ ...config, movies: [newMovie, ...config.movies] });
+    };
+
+    const deleteMovie = (index) => {
+        if (!window.confirm(`Delete "${config.movies[index].title}"?`)) return;
+        const newMovies = config.movies.filter((_, i) => i !== index);
+        setConfig({ ...config, movies: newMovies });
+    };
+
+    // ===== IMAGE UPLOAD =====
+    const handleImageUpload = async (index, file) => {
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert("File too large (Max 2MB)");
+            return;
+        }
+        setStatus(`Uploading image for movie #${index + 1}...`, "loading");
+        try {
+            const url = await uploadImageToRepo(pat, GITHUB_OWNER, GITHUB_REPO, file);
+            handleMovieChange(index, 'poster', url);
+            setStatus("Image uploaded successfully! ✅", "success");
+        } catch (err) {
+            setStatus("Image upload failed: " + err.message, "error");
+        }
+    };
+
+    // ===== TIMER =====
+    const selectTimer = (minutes) => {
+        setSelectedTimer(minutes);
+        const expiry = new Date(Date.now() + minutes * 60 * 1000);
+        setConfig({ ...config, expiryTime: expiry.toISOString() });
+    };
+
+    // ===== REQUESTS =====
+
+    // 1. Approve from Config (already added manually or previously approved)
+    const approveConfigRequest = (index) => {
+        const newRequests = [...config.requests];
+        newRequests[index] = { ...newRequests[index], status: 'approved' };
+        setConfig({ ...config, requests: newRequests });
+    };
+
+    // 2. Approve from GitHub Issues
+    const approveIssueRequest = async (issue, index) => {
+        setStatus(`Approving request "${issue.title}"...`, "loading");
+
+        // Add to config
+        const newReq = {
+            title: issue.title.replace('Request: ', ''),
+            status: 'approved',
+            date: issue.created_at,
+            issueNumber: issue.number
+        };
+
+        // Update local state first (optimistic)
+        // Update local state first (optimistic)
+        // Add to processed IDs to hide it next time (soft close)
+        const updatedClosedIds = [...(config.closedIssueIds || []), issue.number];
+        const updatedRequests = [...(config.requests || []), newReq];
+
+        setConfig({
+            ...config,
+            requests: updatedRequests,
+            closedIssueIds: updatedClosedIds
+        });
+
+        // Close issue on GitHub
+        try {
+            await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
+            // Remove from local issues list
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request approved! (Don't forget to Save)", "success");
+        } catch (err) {
+            console.warn("Could not close GitHub issue (perm denied), but marked as handled locally.");
+            // Still remove from UI
+            setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+            setStatus("Request approved locally! (GitHub issue remains open due to permissions)", "success");
+        }
+    };
+
+    const revokeRequest = (index) => {
+        const newRequests = [...config.requests];
+        newRequests[index] = { ...newRequests[index], status: 'pending' };
+        setConfig({ ...config, requests: newRequests });
+    };
+
+    const deleteRequest = (index) => {
+        if (!window.confirm("Remove this request?")) return;
+        const newRequests = config.requests.filter((_, i) => i !== index);
+        setConfig({ ...config, requests: newRequests });
+    };
+
+    const deleteIssueRequest = async (issue) => {
+        if (!window.confirm(`Decline request "${issue.title}"? This will ignore the issue.`)) return;
+        setStatus(`Declining request...`, "loading");
+
+        // Soft close locally
+        const updatedClosedIds = [...(config.closedIssueIds || []), issue.number];
+        setConfig({ ...config, closedIssueIds: updatedClosedIds });
+        setGithubIssues(prev => prev.filter(i => i.number !== issue.number));
+
+        try {
+            await closeIssue(pat, GITHUB_OWNER, GITHUB_REPO, issue.number);
+            setStatus("Request declined & Issue closed.", "success");
+        } catch (err) {
+            setStatus("Request declined locally! (GitHub issue remains open due to permissions)", "success");
+        }
+    };
+
+    const [newRequestTitle, setNewRequestTitle] = useState("");
+    const addRequest = () => {
+        if (!newRequestTitle.trim()) return;
+        const newReq = { title: newRequestTitle.trim(), status: 'pending', date: new Date().toISOString() };
+        setConfig({ ...config, requests: [...(config.requests || []), newReq] });
+        setNewRequestTitle("");
+    };
+
+    // ===== SAVE & PUSH =====
+    const saveAndPush = async () => {
+        if (!config || !sha) return;
+        setLoading(true);
+        setStatus("Pushing changes to GitHub...", "loading");
+        try {
+            // Re-fetch SHA to avoid conflicts
+            let currentSha = sha;
+            try {
+                const latest = await getRepoContent(pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH);
+                currentSha = latest.sha;
+            } catch (e) { /* use existing */ }
+
+            const res = await updateRepoContent(
+                pat, GITHUB_OWNER, GITHUB_REPO, CONFIG_PATH,
+                config, currentSha,
+                `Update config via Admin Panel (${new Date().toLocaleString()})`
+            );
+            setSha(res.content.sha);
+            // Optimistic Cache: Specific for Admin user to see changes immediately
+            localStorage.setItem('mv_cache_config', JSON.stringify({
+                data: config,
+                timestamp: Date.now()
+            }));
+            // Clear localStorage pending requests since they're now in GitHub
+            localStorage.removeItem('mv_pending_requests');
+            setStatus("Changes saved & pushed to GitHub! ✅ Will be live shortly.", "success");
+        } catch (err) {
+            console.error(err);
+            setStatus("Failed to save: " + err.message, "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ===== LOGIN SCREEN =====
+    if (!loggedIn) {
+        return (
+            <div className="admin-login-overlay">
+                <div className="admin-bg-glow admin-bg-glow--1"></div>
+                <div className="admin-bg-glow admin-bg-glow--2"></div>
+                <div className="login-card fade-in">
+                    <div className="login-logo">MovieVault</div>
+                    <div className="login-subtitle">Admin Access</div>
+                    <form onSubmit={handleLogin} className="login-form">
+                        <div className="login-field">
+                            <label>Password</label>
+                            <input
+                                type="password"
+                                value={loginPass}
+                                onChange={e => setLoginPass(e.target.value)}
+                                placeholder="Enter admin password"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="login-field">
+                            <label>GitHub Auth Token</label>
+                            <input
+                                type="text"
+                                value={loginPat}
+                                onChange={e => setLoginPat(e.target.value)}
+                                placeholder="ghp_xxxxxxxxxxxx"
+                            />
+                            <span className="login-hint">
+                                <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer">
+                                    Create a token →
+                                </a> (select "repo" scope)
+                            </span>
+                        </div>
+                        {loginError && <div className="login-error">{loginError}</div>}
+                        <button type="submit" className="btn-primary btn-glow">🔓 Unlock Admin Panel</button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    // ===== LOADING SCREEN =====
+    if (!config) {
+        return (
+            <div className="admin-loading">
+                <div className="admin-spinner"></div>
+                <p>Loading Dashboard...</p>
+                {statusMsg && <div className="admin-status admin-status--error" style={{ marginTop: '20px' }}>{statusMsg}</div>}
+            </div>
+        );
+    }
+
+    const pendingRequests = (config.requests || []).filter(r => r.status !== 'approved');
+    const approvedRequests = (config.requests || []).filter(r => r.status === 'approved');
+    const timerPresets = [
+        { label: '15 min', mins: 15 },
+        { label: '30 min', mins: 30 },
+        { label: '1 hour', mins: 60 },
+        { label: '2 hours', mins: 120 },
+        { label: '3 hours', mins: 180 },
+        { label: '4 hours', mins: 240 },
+        { label: '5 hours', mins: 300 },
+        { label: '12 hours', mins: 720 },
+        { label: '24 hours', mins: 1440 },
+    ];
+
+    const expiryDate = new Date(config.expiryTime);
+    const expiryDiff = expiryDate - Date.now();
+    const isExpired = expiryDiff <= 0;
+
+    return (
+        <div className="admin-body">
+            {/* Header */}
+            <header className="admin-header">
+                <div className="admin-header__left">
+                    <div className="admin-header__logo">MovieVault</div>
+                    <div className="admin-header__sub">Admin Panel</div>
+                </div>
+                <div className="admin-header__right">
+                    <Link to="/" className="admin-nav-btn">🏠 Home</Link>
+                    <button onClick={handleLogout} className="admin-nav-btn admin-nav-btn--logout">
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <div className="admin-container">
+                {/* Status */}
+                {statusMsg && (
+                    <div className={`admin-status admin-status--${statusType} fade-in`}>
+                        {statusMsg}
+                    </div>
+                )}
+
+                {/* Stats Bar */}
+                <div className="admin-stats fade-in">
+                    <div className="stat-chip">
+                        <span className="stat-chip__label">Movies</span>
+                        <span className="stat-chip__value">{config.movies.length}</span>
+                    </div>
+                    <div className="stat-chip">
+                        <span className="stat-chip__label">Requests</span>
+                        <span className="stat-chip__value">{(config.requests || []).length + githubIssues.length}</span>
+                    </div>
+                    <div className="stat-chip">
+                        <span className="stat-chip__label">Timer</span>
+                        <span className={`stat-chip__value ${isExpired ? 'stat--expired' : 'stat--active'}`}>
+                            {isExpired ? '⛔ Expired' : `✅ ${Math.ceil(expiryDiff / 60000)}m left`}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Timer Section */}
+                <div className="admin-section fade-in">
+                    <div className="admin-section__title">⏱️ Timer Duration</div>
+                    <p className="admin-section__desc">Set how long download links stay active from now.</p>
+                    <div className="timer-grid">
+                        <button
+                            className={`timer-btn ${selectedTimer === null && !isExpired ? 'timer-btn--active' : ''}`}
+                            onClick={() => {
+                                setSelectedTimer(null);
+                                setStatus("Timer continuing... (Existing expiry kept)", "success");
+                            }}
+                        >
+                            ➡️ Continue
+                        </button>
+                        {timerPresets.map(t => (
+                            <button
+                                key={t.mins}
+                                className={`timer-btn ${selectedTimer === t.mins ? 'timer-btn--active' : ''}`}
+                                onClick={() => selectTimer(t.mins)}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="admin-expiry-info">
+                        <span>Current expiry:</span>
+                        <strong>{expiryDate.toLocaleString()}</strong>
+                    </div>
+                </div>
+
+                {/* Movies Section */}
+                <div className="admin-section fade-in">
+                    <div className="admin-section__title">🎬 Movies ({config.movies.length})</div>
+                    <button className="btn-add-movie" onClick={addNewMovie}>
+                        ➕ Add New Movie
+                    </button>
+
+                    <div className="movies-list">
+                        {config.movies.map((movie, i) => (
+                            <div key={i} className="movie-edit-card fade-in" style={{ animationDelay: `${i * 0.03}s` }}>
+                                <div className="movie-edit-card__header">
+                                    <div className="movie-edit-card__poster-wrap">
+                                        <img
+                                            src={movie.poster}
+                                            alt={movie.title}
+                                            className="movie-edit-card__poster"
+                                            onError={e => { e.target.src = 'https://via.placeholder.com/80x120/1a1a2e/e94560?text=No+Image'; }}
+                                        />
+                                        <button
+                                            className="poster-upload-btn"
+                                            onClick={() => {
+                                                const input = document.createElement('input');
+                                                input.type = 'file';
+                                                input.accept = 'image/*';
+                                                input.onchange = (e) => handleImageUpload(i, e.target.files[0]);
+                                                input.click();
+                                            }}
+                                            title="Upload poster"
+                                        >
+                                            📂
+                                        </button>
+                                    </div>
+                                    <div className="movie-edit-card__fields">
+                                        <div className="field-row">
+                                            <label>Title</label>
+                                            <input
+                                                type="text"
+                                                value={movie.title}
+                                                onChange={e => handleMovieChange(i, 'title', e.target.value)}
+                                                placeholder="Movie Title"
+                                            />
+                                        </div>
+                                        <div className="field-row">
+                                            <label>Poster URL</label>
+                                            <input
+                                                type="url"
+                                                value={movie.poster}
+                                                onChange={e => handleMovieChange(i, 'poster', e.target.value)}
+                                                placeholder="https://..."
+                                            />
+                                        </div>
+                                        <div className="field-grid-2">
+                                            <div className="field-row">
+                                                <label>Rating</label>
+                                                <input
+                                                    type="text"
+                                                    value={movie.rating}
+                                                    onChange={e => handleMovieChange(i, 'rating', e.target.value)}
+                                                    placeholder="8.5"
+                                                />
+                                            </div>
+                                            <div className="field-row">
+                                                <label>Year</label>
+                                                <input
+                                                    type="text"
+                                                    value={movie.year}
+                                                    onChange={e => handleMovieChange(i, 'year', e.target.value)}
+                                                    placeholder="2024"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="field-grid-2">
+                                            <div className="field-row">
+                                                <label>Duration</label>
+                                                <input
+                                                    type="text"
+                                                    value={movie.duration}
+                                                    onChange={e => handleMovieChange(i, 'duration', e.target.value)}
+                                                    placeholder="2h 30m"
+                                                />
+                                            </div>
+                                            <div className="field-row">
+                                                <label>Genre</label>
+                                                <input
+                                                    type="text"
+                                                    value={movie.genre}
+                                                    onChange={e => handleMovieChange(i, 'genre', e.target.value)}
+                                                    placeholder="Action/Drama"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="movie-edit-card__actions">
+                                            <button className="btn-delete-movie" onClick={() => deleteMovie(i)}>
+                                                🗑️ Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Quality Links */}
+                                <div className="quality-section">
+                                    <div className="quality-section__label">Download Links</div>
+                                    {movie.qualities.map((q, qi) => (
+                                        <div key={qi} className="quality-row">
+                                            <span className={`quality-badge quality-badge--${q.label.replace('p', '')}`}>
+                                                {q.label}
+                                            </span>
+                                            <input
+                                                type="text"
+                                                value={q.size}
+                                                onChange={e => handleQualityChange(i, qi, 'size', e.target.value)}
+                                                placeholder="Size"
+                                                className="quality-size-input"
+                                            />
+                                            <input
+                                                type="url"
+                                                value={q.url === '#' ? '' : q.url}
+                                                onChange={e => handleQualityChange(i, qi, 'url', e.target.value || '#')}
+                                                placeholder={`Paste ${q.label} link...`}
+                                                className="quality-url-input"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Requests Section */}
+                <div className="admin-section fade-in">
+                    <div className="admin-section__title">💬 Manage Requests</div>
+
+                    <div className="request-add-row">
+                        <input
+                            type="text"
+                            value={newRequestTitle}
+                            onChange={e => setNewRequestTitle(e.target.value)}
+                            placeholder="Log a new request manually..."
+                            onKeyDown={e => e.key === 'Enter' && addRequest()}
+                        />
+                        <button className="btn-add-request" onClick={addRequest}>Log & Add</button>
+                    </div>
+
+                    {/* Pending */}
+                    <h3 className="request-group-title request-group-title--pending">
+                        ⏳ Pending Approval ({pendingRequests.length + githubIssues.length})
+                    </h3>
+                    <div className="request-list">
+                        {pendingRequests.length === 0 && githubIssues.length === 0 ? (
+                            <div className="request-empty">No pending requests</div>
+                        ) : (
+                            <>
+                                {/* Config Pending (Legacy/Manual) */}
+                                {pendingRequests.map((req) => {
+                                    const origIdx = config.requests.indexOf(req);
+                                    return (
+                                        <div key={`conf-${origIdx}`} className="request-item request-item--pending">
+                                            <div className="request-item__info">
+                                                <span className="request-item__title">{req.title}</span>
+                                                <span className="request-item__date">
+                                                    {req.date ? new Date(req.date).toLocaleDateString() : 'N/A'}
+                                                </span>
+                                                <span className="request-source-badge">Manual</span>
+                                            </div>
+                                            <div className="request-item__actions">
+                                                <button className="req-btn req-btn--approve" onClick={() => approveConfigRequest(origIdx)}>
+                                                    ✅ Approve
+                                                </button>
+                                                <button className="req-btn req-btn--decline" onClick={() => deleteRequest(origIdx)}>
+                                                    ❌ Decline
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* GitHub Issues Pending */}
+                                {githubIssues.map((issue) => (
+                                    <div key={`gh-${issue.id}`} className="request-item request-item--pending">
+                                        <div className="request-item__info">
+                                            <span className="request-item__title">
+                                                {issue.title.replace(/^Request:\s*/i, '')}
+                                            </span>
+                                            <span className="request-item__date">
+                                                {new Date(issue.created_at).toLocaleDateString()}
+                                            </span>
+                                            <span className="request-source-badge request-source-badge--gh">
+                                                <a href={issue.html_url} target="_blank" rel="noreferrer">
+                                                    Issue #{issue.number}
+                                                </a>
+                                            </span>
+                                        </div>
+                                        <div className="request-item__actions">
+                                            <button className="req-btn req-btn--approve" onClick={() => approveIssueRequest(issue)}>
+                                                ✅ Approve
+                                            </button>
+                                            <button className="req-btn req-btn--decline" onClick={() => deleteIssueRequest(issue)}>
+                                                ❌ Decline
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Approved */}
+                    <h3 className="request-group-title request-group-title--approved">
+                        ✅ Approved ({approvedRequests.length})
+                    </h3>
+                    <div className="request-list">
+                        {approvedRequests.length === 0 ? (
+                            <div className="request-empty">No approved requests</div>
+                        ) : (
+                            approvedRequests.map((req) => {
+                                const origIdx = config.requests.indexOf(req);
+                                return (
+                                    <div key={origIdx} className="request-item request-item--approved">
+                                        <div className="request-item__info">
+                                            <span className="request-item__title">{req.title}</span>
+                                            <span className="request-item__badge">Visible on Home</span>
+                                        </div>
+                                        <div className="request-item__actions">
+                                            <button className="req-btn req-btn--revoke" onClick={() => revokeRequest(origIdx)}>
+                                                ↩️ Revoke
+                                            </button>
+                                            <button className="req-btn req-btn--decline" onClick={() => deleteRequest(origIdx)}>
+                                                🗑️ Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+
+                {/* Save Button */}
+                <button
+                    className="btn-primary btn-save-main btn-glow"
+                    onClick={saveAndPush}
+                    disabled={loading}
+                >
+                    {loading ? '⏳ Saving...' : '💾 Save & Push to GitHub'}
+                </button>
+            </div>
+
+            {/* Footer */}
+            <div className="admin-footer">
+                MovieVault Admin Panel — v2.0
+            </div>
+        </div>
+    );
+}
+
+export default Admin;
