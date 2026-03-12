@@ -180,6 +180,11 @@ export const getItemCounters = (counters, type, title) => {
 export const detectFileSize = async (url) => {
     if (!url || url === '#' || !url.startsWith('http')) return null;
 
+    // Skip Google Drive links because they return HTML warning pages (~100KB) instead of the actual file size
+    if (url.includes('drive.google.com')) {
+        return null; // Prevents overwriting manual size (like 2.3 GB) with 105 KB
+    }
+
     try {
         const res = await fetch(url, { method: 'HEAD', mode: 'cors' });
         if (res.ok) {
