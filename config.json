@@ -159,33 +159,5 @@
     29,
     30,
     31
-  ],
-  "series": [
-    {
-      "title": "jkkk",
-      "poster": "",
-      "genre": "",
-      "year": "",
-      "episodes": [
-        {
-          "label": "Episode 1",
-          "quality": "1080p",
-          "size": "0 GB",
-          "url": ""
-        },
-        {
-          "label": "Episode 2",
-          "quality": "1080p",
-          "size": "0 GB",
-          "url": ""
-        },
-        {
-          "label": "Episode 3",
-          "quality": "1080p",
-          "size": "0 GB",
-          "url": ""
-        }
-      ]
-    }
   ]
 }
