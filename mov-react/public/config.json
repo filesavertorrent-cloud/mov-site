@@ -167,5 +167,62 @@
     31,
     32
   ],
-  "series": []
+  "series": [
+    {
+      "title": "ONE PIECE Season 2 (Multi Audio)",
+      "poster": "https://www.pixelbb.com/images/2026/03/10/58814330.jpg",
+      "genre": "live-action/adventure fantasy",
+      "year": "2026",
+      "episodes": [
+        {
+          "label": "Episode 1",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 2",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 3",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 4",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 5",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 6",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 7",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "Episode 8",
+          "quality": "1080p",
+          "size": "0 GB",
+          "url": ""
+        }
+      ]
+    }
+  ]
 }
