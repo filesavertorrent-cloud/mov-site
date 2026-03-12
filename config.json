@@ -22,7 +22,7 @@
         {
           "label": "1080p",
           "size": "3 GB",
-          "url": "https://drive.google.com/file/d/1eNKt3PE0Di0vpaAf2WjbxrXEsP4C9xCS/view?usp=sharing"
+          "url": "https://example.com/movie.mp4"
         }
       ]
     },
@@ -159,5 +159,14 @@
     29,
     30,
     31
+  ],
+  "series": [
+    {
+      "title": "",
+      "poster": "",
+      "genre": "",
+      "year": "",
+      "episodes": []
+    }
   ]
 }
