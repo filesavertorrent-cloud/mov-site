@@ -2,6 +2,31 @@
   "expiryTime": "2026-03-13T04:47:08.236Z",
   "movies": [
     {
+      "title": "Made in Korea",
+      "poster": "https://www.pixelbb.com/images/2026/03/12/EN-IN_MADIK_Main_Vertical_4x5_RGB_PREDATE.jpg",
+      "rating": "5",
+      "year": "2026",
+      "duration": "1h 51m",
+      "genre": "Adventure/Drama",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "1 GB",
+          "url": ""
+        },
+        {
+          "label": "720p",
+          "size": "2 GB",
+          "url": ""
+        },
+        {
+          "label": "1080p",
+          "size": "3 GB",
+          "url": ""
+        }
+      ]
+    },
+    {
       "title": "Zootopia 2 (Tamil)",
       "poster": "https://images.static-bluray.com/movies/covers/400897_front.jpg?t=1770062517",
       "rating": "7.4",
