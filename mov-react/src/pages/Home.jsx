@@ -24,6 +24,7 @@ function parseConfig(config) {
         year: m.year,
         duration: m.duration,
         genre: m.genre,
+        comingSoon: m.comingSoon || '',
         qualities: m.qualities.map(q => ({
             label: q.label,
             size: q.size,
@@ -267,6 +268,7 @@ function Home() {
                                         onDownload={handleDownload}
                                         now={now}
                                         downloadCounts={movieCounters.downloads || {}}
+                                        comingSoon={movie.comingSoon}
                                     />
                                 </div>
                             );
