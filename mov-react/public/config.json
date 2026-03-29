@@ -167,12 +167,6 @@
       "issueNumber": 22
     },
     {
-      "title": "thai kizhavi",
-      "status": "approved",
-      "date": "2026-02-22T16:20:31Z",
-      "issueNumber": 27
-    },
-    {
       "title": "Flashback 2025",
       "status": "approved",
       "date": "2026-03-09T02:35:51Z",
@@ -217,7 +211,8 @@
     30,
     31,
     32,
-    33
+    33,
+    34
   ],
   "series": [
     {
