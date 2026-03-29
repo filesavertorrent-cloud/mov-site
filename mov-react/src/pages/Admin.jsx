@@ -151,6 +151,7 @@ function Admin() {
             year: "",
             duration: "",
             genre: "",
+            comingSoon: "",
             qualities: [
                 { label: "480p", size: "0 GB", url: "" },
                 { label: "720p", size: "0 GB", url: "" },
@@ -710,6 +711,31 @@ function Admin() {
                                                     placeholder="Action/Drama"
                                                 />
                                             </div>
+                                        </div>
+                                        <div className="field-row">
+                                            <label>📅 Coming Soon Date <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>(leave empty if already released)</span></label>
+                                            <div className="coming-soon-row">
+                                                <input
+                                                    type="date"
+                                                    value={movie.comingSoon || ''}
+                                                    onChange={e => handleMovieChange(i, 'comingSoon', e.target.value)}
+                                                    className={`coming-soon-input ${movie.comingSoon ? 'coming-soon-input--active' : ''}`}
+                                                />
+                                                {movie.comingSoon && (
+                                                    <button
+                                                        className="btn-clear-coming-soon"
+                                                        onClick={() => handleMovieChange(i, 'comingSoon', '')}
+                                                        title="Clear coming soon date (movie is released)"
+                                                    >
+                                                        ❌ Clear
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {movie.comingSoon && (
+                                                <div className="coming-soon-preview">
+                                                    🎬 Will show as: <strong>"Coming on {new Date(movie.comingSoon + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"</strong>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="movie-edit-card__actions">
                                             <button className="btn-delete-movie" onClick={() => deleteMovie(i)}>
