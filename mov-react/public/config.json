@@ -2,6 +2,32 @@
   "expiryTime": "2026-03-29T16:29:59.463Z",
   "movies": [
     {
+      "title": "Thaai Kizhavi",
+      "poster": "https://img.studioflicks.com/wp-content/uploads/2025/12/26113719/Thaai-Kizhavi-Movie-HD-Posters-Tamil-2.jpeg",
+      "rating": "",
+      "year": "2026",
+      "duration": "",
+      "genre": "Comedy/Drama",
+      "comingSoon": "2026-04-14",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "720p",
+          "size": "0 GB",
+          "url": ""
+        },
+        {
+          "label": "1080p",
+          "size": "0 GB",
+          "url": ""
+        }
+      ]
+    },
+    {
       "title": "Made in Korea",
       "poster": "https://www.pixelbb.com/images/2026/03/12/EN-IN_MADIK_Main_Vertical_4x5_RGB_PREDATE.jpg",
       "rating": "5",
