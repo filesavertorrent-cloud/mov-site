@@ -48,7 +48,9 @@
     },
     "The Boys (2026) Season 5 Multi": {
       "likes": 2,
-      "downloads": {}
+      "downloads": {
+        "Episode 1": 1
+      }
     }
   }
 }
