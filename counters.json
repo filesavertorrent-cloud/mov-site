@@ -31,8 +31,10 @@
       }
     },
     "Thaai Kizhavi": {
-      "likes": 1,
-      "downloads": {}
+      "likes": 2,
+      "downloads": {
+        "1080p": 1
+      }
     }
   },
   "series": {
