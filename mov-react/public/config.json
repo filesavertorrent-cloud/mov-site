@@ -1,29 +1,29 @@
 {
-  "expiryTime": "2026-04-10T09:40:14.285Z",
+  "expiryTime": "2026-04-11T04:54:39.260Z",
   "movies": [
     {
       "title": "Thaai Kizhavi",
-      "poster": "https://img.studioflicks.com/wp-content/uploads/2025/12/26113719/Thaai-Kizhavi-Movie-HD-Posters-Tamil-2.jpeg",
+      "poster": "https://pbs.twimg.com/media/HE_NueHaoAA0OVC?format=jpg&name=large",
       "rating": "8.1",
       "year": "2026",
       "duration": "2h 30m",
       "genre": "Comedy/Drama",
-      "comingSoon": "2026-04-10",
+      "comingSoon": "",
       "qualities": [
         {
           "label": "480p",
-          "size": "0 GB",
-          "url": ""
+          "size": "700 MB",
+          "url": "https://drive.google.com/file/d/17TJdO1aAOdvsAGAFEro8EvaopAni-ggL/view?usp=sharing"
         },
         {
           "label": "720p",
-          "size": "0 GB",
-          "url": ""
+          "size": "1.5 GB",
+          "url": "https://drive.google.com/file/d/14bdWowcNn8Xm8W6VrxolRB3nFhpkkYtc/view?usp=sharing"
         },
         {
           "label": "1080p",
-          "size": "0 GB",
-          "url": ""
+          "size": "3 GB",
+          "url": "https://drive.google.com/file/d/1efYyaYaM9nbUpNu5DI-Z_Nd8fSTqmgU3/view?usp=sharing"
         }
       ]
     }
