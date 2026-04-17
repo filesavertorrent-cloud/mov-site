@@ -52,6 +52,12 @@
       "status": "approved",
       "date": "2026-03-12T05:16:05Z",
       "issueNumber": 32
+    },
+    {
+      "title": "PROJECT HAIL MARRY",
+      "status": "approved",
+      "date": "2026-04-13T04:33:07Z",
+      "issueNumber": 36
     }
   ],
   "closedIssueIds": [
@@ -87,7 +93,10 @@
     31,
     32,
     33,
-    34
+    34,
+    35,
+    37,
+    36
   ],
   "series": [
     {
