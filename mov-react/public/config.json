@@ -2,6 +2,32 @@
   "expiryTime": "2026-04-25T11:30:11.229Z",
   "movies": [
     {
+      "title": "Happy Raj Tamil",
+      "poster": "https://pbs.twimg.com/media/HFIsb7Ja4AAB6rR?format=jpg&name=large",
+      "rating": "6.8",
+      "year": "2026",
+      "duration": "2h 39m",
+      "genre": "Family Drama",
+      "comingSoon": "",
+      "qualities": [
+        {
+          "label": "480p",
+          "size": "700 MB",
+          "url": "https://drive.google.com/file/d/1scyjWCrb-nylmfBiTFDBjr6fjz7cms6p/view?usp=sharing"
+        },
+        {
+          "label": "720p",
+          "size": "1.4 GB",
+          "url": "https://drive.google.com/file/d/1aaFGEPBo3eeXQnV0czKHQu8REfSbub2U/view?usp=sharing"
+        },
+        {
+          "label": "1080p",
+          "size": "3 GB",
+          "url": "https://drive.google.com/file/d/1sdoIfg2GqZMiNKod0-_r999Ezio5if64/view?usp=sharing"
+        }
+      ]
+    },
+    {
       "title": "Youth Tamil",
       "poster": "https://www.pixelbb.com/images/2026/04/15/HFW9mUaa8AESFxX.jpg",
       "rating": "10",
