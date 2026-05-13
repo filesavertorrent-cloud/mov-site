@@ -1,5 +1,5 @@
 {
-  "expiryTime": "2026-05-07T09:30:23.248Z",
+  "expiryTime": "2026-05-14T08:36:10.325Z",
   "movies": [
     {
       "title": "LIK: Love Insurance Kompany Tamil",
@@ -218,6 +218,12 @@
           "quality": "1080p",
           "size": "1 GB",
           "url": "https://drive.google.com/file/d/1mAnQA_IOtAz0IK2bOq6o-eqy3kE501YY/view?usp=sharing"
+        },
+        {
+          "label": "Episode 7",
+          "quality": "1080p",
+          "size": "1 GB",
+          "url": "https://drive.google.com/file/d/1tAk-ZHuOP1ixlnoCX_Kkbm3QJ69ZT5tG/view?usp=sharing"
         }
       ]
     },
